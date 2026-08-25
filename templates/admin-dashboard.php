@@ -88,6 +88,29 @@ defined( 'ABSPATH' ) || exit;
 		<p class="description"><?php esc_html_e( 'Detective never updates anything for you — it tells you what needs doing and records what happens when you do it.', 'ravnsight-detective' ); ?></p>
 	<?php endif; ?>
 
+	<h2><?php esc_html_e( 'Server limits', 'ravnsight-detective' ); ?></h2>
+	<p>
+		<?php
+		echo esc_html(
+			sprintf(
+				/* translators: 1: memory limit, 2: upload limit, 3: post limit, 4: execution time, 5: free disk. */
+				__( 'PHP memory limit %1$s · max upload %2$s (POST %3$s) · max execution %4$s s · free disk space %5$s', 'ravnsight-detective' ),
+				$health['server']['memory_limit'],
+				$health['server']['upload_max'],
+				$health['server']['post_max'],
+				(string) $health['server']['max_exec'],
+				null !== $health['server']['disk_free_gb'] ? $health['server']['disk_free_gb'] . ' GB' : __( 'unknown', 'ravnsight-detective' )
+			)
+		);
+		?>
+	</p>
+	<?php if ( $health['server']['memory_low'] ) : ?>
+		<div class="notice notice-warning inline"><p><?php esc_html_e( 'The PHP memory limit is below 128 MB — modern themes and page builders routinely exceed that. Ask your host to raise it before it causes white screens.', 'ravnsight-detective' ); ?></p></div>
+	<?php endif; ?>
+	<?php if ( $health['server']['disk_low'] ) : ?>
+		<div class="notice notice-error inline"><p><?php esc_html_e( 'The server is low on disk space. A full disk breaks uploads, caches, backups and database writes — often in confusing ways. Free up space or upgrade the plan now.', 'ravnsight-detective' ); ?></p></div>
+	<?php endif; ?>
+
 	<h2><?php esc_html_e( 'Top error sources, 7 days', 'ravnsight-detective' ); ?></h2>
 	<?php if ( empty( $data['offenders'] ) ) : ?>
 		<p><?php esc_html_e( 'No errors recorded. Quiet is good.', 'ravnsight-detective' ); ?></p>

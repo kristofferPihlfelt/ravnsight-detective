@@ -55,7 +55,19 @@ final class Health {
 			$core_update = (string) $core[0]->current;
 		}
 
+		$disk_free  = @disk_free_space( ABSPATH ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- open_basedir may forbid it; null is a valid answer.
+		$disk_total = @disk_total_space( ABSPATH ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- as above.
+
 		return array(
+			'server'         => array(
+				'memory_limit'    => (string) ini_get( 'memory_limit' ),
+				'memory_low'      => wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) ) > 0 && wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) ) < 128 * 1048576,
+				'upload_max'      => (string) ini_get( 'upload_max_filesize' ),
+				'post_max'        => (string) ini_get( 'post_max_size' ),
+				'max_exec'        => (int) ini_get( 'max_execution_time' ),
+				'disk_free_gb'    => false !== $disk_free ? round( $disk_free / 1073741824, 1 ) : null,
+				'disk_low'        => false !== $disk_free && false !== $disk_total && $disk_total > 0 && ( $disk_free < 2 * 1073741824 || $disk_free / $disk_total < 0.1 ),
+			),
 			'plugin_updates' => $plugin_updates,
 			'theme_updates'  => $theme_updates,
 			'core_update'    => $core_update,

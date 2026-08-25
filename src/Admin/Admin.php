@@ -93,6 +93,7 @@ final class Admin {
 			'change_detective' => FeatureFlags::enabled( 'change_detective' ),
 		);
 		$delete_on_uninstall = (bool) get_option( 'ravndet_delete_data_on_uninstall', false );
+		$dropin_status       = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::status();
 		require RAVNDET_PATH . 'templates/admin-settings.php';
 	}
 
@@ -117,6 +118,19 @@ final class Admin {
 		
 		update_option( 'ravndet_retention_days', $retention, false );
 		update_option( 'ravndet_delete_data_on_uninstall', isset( $_POST['delete_data_on_uninstall'] ) ? 1 : 0, false );
+
+		if ( isset( $_POST['dropin_action'] ) ) {
+			$dropin_action = sanitize_key( wp_unslash( $_POST['dropin_action'] ) );
+			if ( 'install' === $dropin_action ) {
+				$result = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::install();
+				if ( is_wp_error( $result ) ) {
+					wp_safe_redirect( add_query_arg( 'ravndet_notice', 'dropin_foreign', ravndet_url( 'settings' ) ) );
+					exit;
+				}
+			} elseif ( 'uninstall' === $dropin_action ) {
+				\Ravnsight\Detective\Modules\ErrorDetective\Dropin::uninstall();
+			}
+		}
 
 		FeatureFlags::save(
 			array(

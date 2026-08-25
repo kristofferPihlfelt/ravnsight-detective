@@ -22,3 +22,8 @@ foreach ( array( 'ravndet_db_version', 'ravndet_retention_days', 'ravndet_module
 	delete_option( $ravndet_option );
 }
 wp_clear_scheduled_hook( 'ravndet_daily' );
+
+$ravndet_dropin = WP_CONTENT_DIR . '/fatal-error-handler.php';
+if ( file_exists( $ravndet_dropin ) && str_contains( (string) file_get_contents( $ravndet_dropin ), 'Ravnsight Detective drop-in' ) ) {
+	wp_delete_file( $ravndet_dropin );
+}

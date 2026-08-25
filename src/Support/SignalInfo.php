@@ -42,6 +42,22 @@ final class SignalInfo {
 				return __( 'Setting changed', 'ravnsight-detective' );
 			case 'change.php_version':
 				return __( 'PHP version changed', 'ravnsight-detective' );
+			case 'change.plugin_installed':
+				return __( 'New plugin appeared', 'ravnsight-detective' );
+			case 'change.plugin_removed':
+				return __( 'Plugin removed', 'ravnsight-detective' );
+			case 'change.theme_installed':
+				return __( 'New theme appeared', 'ravnsight-detective' );
+			case 'change.theme_file_modified':
+				return __( 'Theme file changed', 'ravnsight-detective' );
+			case 'perf.request_slow':
+				return __( 'Slow request', 'ravnsight-detective' );
+			case 'perf.memory_high':
+				return __( 'High memory use', 'ravnsight-detective' );
+			case 'error.db_error':
+				return __( 'Database error', 'ravnsight-detective' );
+			case 'error.js_error':
+				return __( 'JavaScript error', 'ravnsight-detective' );
 			default:
 				return $type;
 		}
@@ -79,6 +95,31 @@ final class SignalInfo {
 				return array(
 					'what'   => __( 'The server PHP version changed — usually your host upgrading. New PHP versions break old code; errors that start today often trace back to this.', 'ravnsight-detective' ),
 					'action' => __( 'Watch the error columns for the next few days. Deprecations recorded before the upgrade were the warning signs.', 'ravnsight-detective' ),
+				);
+			case 'perf.request_slow':
+				return array(
+					'what'   => __( 'A visitor request took longer than the threshold. The detail shows how much of it was database work (query count, and the exact slow query shapes when SAVEQUERIES is enabled in wp-config.php).', 'ravnsight-detective' ),
+					'action' => __( 'Many queries (hundreds) usually means a plugin doing N+1 lookups — check which plugins run on this page. High memory with few queries points at heavy page builders or image work. If slowness started on a specific date, check the timeline for what changed.', 'ravnsight-detective' ),
+				);
+			case 'perf.memory_high':
+				return array(
+					'what'   => __( 'The request came close to the PHP memory limit. When the limit is actually hit, the visitor gets a white screen and a fatal appears here instead.', 'ravnsight-detective' ),
+					'action' => __( 'Recurring on the same page: something on it loads too much at once. Everywhere at once: the limit may simply be low — see the memory limit under Needs attention on the dashboard.', 'ravnsight-detective' ),
+				);
+			case 'error.db_error':
+				return array(
+					'what'   => __( 'A database query failed. The component is our best guess at who ran it; the detail shows the query shape with values stripped.', 'ravnsight-detective' ),
+					'action' => __( 'A missing-table error right after activating a plugin means its installer failed — deactivate and reactivate it. Syntax errors are bugs to report to the developer. Connection errors are your host.', 'ravnsight-detective' ),
+				);
+			case 'change.theme_file_modified':
+				return array(
+					'what'   => __( 'A PHP file in the active theme changed WITHOUT a theme update — someone edited it by hand, a deployment touched it, or in the worst case malware modified it. Theme updates that change many files at once are reported as updates, not as file edits.', 'ravnsight-detective' ),
+					'action' => __( 'If nobody on your team edited this file today, treat it seriously: open the file and look at what changed, and compare against a clean copy of the theme. functions.php is the most common target for both hurried developers and malware.', 'ravnsight-detective' ),
+				);
+			case 'error.js_error':
+				return array(
+					'what'   => __( 'JavaScript failed in a visitor\'s browser. Broken JS is invisible in server logs but very visible to visitors: dead buttons, forms that do nothing, carts that will not update.', 'ravnsight-detective' ),
+					'action' => __( 'The source file shows which plugin or theme shipped the broken script. Errors from browser extensions and external scripts are attributed as external — those you can usually ignore.', 'ravnsight-detective' ),
 				);
 			default:
 				if ( 0 === strpos( $type, 'change.' ) ) {

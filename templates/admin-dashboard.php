@@ -59,7 +59,14 @@ defined( 'ABSPATH' ) || exit;
 				<tr>
 					<td><?php echo esc_html( $ravndet_up['name'] ); ?> <code><?php echo esc_html( $ravndet_up['slug'] ); ?></code></td>
 					<td><?php echo esc_html( $ravndet_up['current'] ); ?></td>
-					<td><?php echo esc_html( $ravndet_up['new'] ); ?> — <a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'plugins screen', 'ravnsight-detective' ); ?></a></td>
+					<td>
+						<?php echo esc_html( $ravndet_up['new'] ); ?>
+						<?php if ( ! empty( $ravndet_up['no_package'] ) ) : ?>
+							<strong style="color:#996800"><?php esc_html_e( '— update announced but not downloadable: the licence or subscription for this premium plugin has likely expired', 'ravnsight-detective' ); ?></strong>
+						<?php else : ?>
+							— <a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'plugins screen', 'ravnsight-detective' ); ?></a>
+						<?php endif; ?>
+					</td>
 				</tr>
 			<?php endforeach; ?>
 			<?php foreach ( $health['theme_updates'] as $ravndet_up ) : ?>

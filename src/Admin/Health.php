@@ -27,10 +27,15 @@ final class Health {
 		$plugin_updates = array();
 		foreach ( (array) get_plugin_updates() as $basename => $plugin ) {
 			$plugin_updates[] = array(
-				'name'    => (string) $plugin->Name, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WP core object.
-				'slug'    => strtok( (string) $basename, '/' ),
-				'current' => (string) $plugin->Version, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WP core object.
-				'new'     => (string) ( $plugin->update->new_version ?? '' ),
+				'name'       => (string) $plugin->Name, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WP core object.
+				'slug'       => strtok( (string) $basename, '/' ),
+				'current'    => (string) $plugin->Version, // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WP core object.
+				'new'        => (string) ( $plugin->update->new_version ?? '' ),
+				// An update that exists but has no download package is the
+				// classic signature of a premium plugin whose licence/
+				// subscription has lapsed — the vendor announces the version
+				// but will not hand over the file.
+				'no_package' => empty( $plugin->update->package ),
 			);
 		}
 

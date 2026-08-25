@@ -47,7 +47,15 @@ final class Handler {
 	 * @return bool
 	 */
 	public static function on_error( $errno, $errstr, $errfile = '', $errline = 0 ) {
-		if ( ! self::$recording && ( error_reporting() & $errno ) ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, PluginCheck.CodeAnalysis.PHPErrorReporting.DirectErrorReportingCall -- READ-ONLY error_reporting() call to honour @-suppression exactly like core; nothing is changed.
+		/*
+		 * Record independent of the global error_reporting mask: sites run
+		 * with WP_DEBUG off, and the whole point is seeing deprecations,
+		 * warnings and notices WITHOUT turning debug display on. The only
+		 * thing honoured is the @ operator (PHP 8 sets error_reporting to
+		 * exactly the fatal-only mask during suppression).
+		 */
+		$suppressed = 0 === error_reporting() || ( E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR | E_PARSE ) === error_reporting(); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, PluginCheck.CodeAnalysis.PHPErrorReporting.DirectErrorReportingCall -- READ-ONLY check for @-suppression; nothing is changed.
+		if ( ! self::$recording && ! $suppressed ) {
 			self::$recording = true;
 			try {
 				self::record( $errno, (string) $errstr, (string) $errfile, (int) $errline );
@@ -68,6 +76,7 @@ final class Handler {
 	 * Fatal/OOM catcher.
 	 */
 	public static function on_shutdown() {
+		self::record_db_errors();
 		$error = error_get_last();
 		if ( null === $error || ! in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR ), true ) ) {
 			return;
@@ -112,6 +121,36 @@ final class Handler {
 			),
 			$uri
 		);
+	}
+
+	/**
+	 * Database errors collected by wpdb during the request ($EZSQL_ERROR).
+	 * Zero cost when the request had none.
+	 */
+	private static function record_db_errors() {
+		global $EZSQL_ERROR;
+
+		if ( empty( $EZSQL_ERROR ) || ! is_array( $EZSQL_ERROR ) || self::$recording ) {
+			return;
+		}
+		self::$recording = true;
+		try {
+			foreach ( array_slice( $EZSQL_ERROR, 0, 10 ) as $db_error ) {
+				$query = (string) ( $db_error['query'] ?? '' );
+				// Normalise: strip literals so the same broken query is ONE row.
+				$shape = preg_replace( array( "/'[^']*'/", '/\d+/' ), array( '?', 'N' ), $query );
+				\Ravnsight\Detective\Core\SignalStore::record(
+					'error.db_error',
+					'critical',
+					(string) ( $db_error['error_str'] ?? 'Database error' ),
+					\Ravnsight\Detective\Support\ComponentResolver::from_trace( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 12 ) ), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- attribution.
+					array( 'query_shape' => substr( (string) $shape, 0, 500 ) )
+				);
+			}
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- shutdown must stay silent.
+			// Swallow.
+		}
+		self::$recording = false;
 	}
 
 	/**

@@ -16,6 +16,12 @@ defined( 'ABSPATH' ) || exit;
 	<?php if ( isset( $_GET['ravndet_notice'] ) && 'saved' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'ravnsight-detective' ); ?></p></div>
 	<?php endif; ?>
+	<?php if ( isset( $_GET['ravndet_notice'] ) && 'dropin_installed' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Drop-in installed.', 'ravnsight-detective' ); ?></p></div>
+	<?php endif; ?>
+	<?php if ( isset( $_GET['ravndet_notice'] ) && 'dropin_removed' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Drop-in removed.', 'ravnsight-detective' ); ?></p></div>
+	<?php endif; ?>
 	<?php if ( isset( $_GET['ravndet_notice'] ) && 'dropin_foreign' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
 		<div class="notice notice-error"><p><?php esc_html_e( 'Another fatal-error-handler.php already exists — Ravnsight Detective will not overwrite it.', 'ravnsight-detective' ); ?></p></div>
 	<?php endif; ?>
@@ -50,21 +56,15 @@ defined( 'ABSPATH' ) || exit;
 						<label><input type="checkbox" name="module_change_detective" <?php checked( $flags['change_detective'] ); ?>>
 						<?php esc_html_e( 'Change Detective — record plugin/theme/core changes and daily snapshots', 'ravnsight-detective' ); ?></label>
 					</div>
+					<div>
+						<label><input type="checkbox" name="module_perf_detective" <?php checked( $flags['perf_detective'] ); ?>>
+						<?php esc_html_e( 'Performance Detective — record slow requests, slow queries and high memory use', 'ravnsight-detective' ); ?></label>
+					</div>
+					<div>
+						<label><input type="checkbox" name="module_js_detective" <?php checked( $flags['js_detective'] ); ?>>
+						<?php esc_html_e( 'JavaScript Detective — record front-end JS errors (reports to this site\'s own REST API, never externally)', 'ravnsight-detective' ); ?></label>
+					</div>
 					<p class="description"><?php esc_html_e( 'A disabled module records nothing; existing data stays until retention removes it.', 'ravnsight-detective' ); ?></p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Early fatal capture', 'ravnsight-detective' ); ?></th>
-				<td>
-					<?php if ( 'ours' === $dropin_status ) : ?>
-						<p><?php esc_html_e( 'The fatal-error-handler drop-in is installed. Fatals that happen before plugins load are recorded too.', 'ravnsight-detective' ); ?></p>
-						<label><input type="checkbox" name="dropin_action" value="uninstall"> <?php esc_html_e( 'Remove the drop-in on save', 'ravnsight-detective' ); ?></label>
-					<?php elseif ( 'foreign' === $dropin_status ) : ?>
-						<p><?php esc_html_e( 'Another fatal-error-handler.php exists in wp-content. Ravnsight Detective never overwrites it — early fatals are captured by that handler instead.', 'ravnsight-detective' ); ?></p>
-					<?php else : ?>
-						<label><input type="checkbox" name="dropin_action" value="install"> <?php esc_html_e( 'Install the fatal-error-handler drop-in on save', 'ravnsight-detective' ); ?></label>
-						<p class="description"><?php esc_html_e( 'Optional. Catches fatal errors that happen before plugins load (for example a parse error in another plugin). A single file in wp-content, safe to delete at any time, always hands over to the WordPress core handler.', 'ravnsight-detective' ); ?></p>
-					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
@@ -78,4 +78,25 @@ defined( 'ABSPATH' ) || exit;
 
 		<?php submit_button( __( 'Save settings', 'ravnsight-detective' ) ); ?>
 	</form>
+
+	<h2><?php esc_html_e( 'Early fatal capture', 'ravnsight-detective' ); ?></h2>
+	<?php if ( 'ours' === $dropin_status ) : ?>
+		<p><span class="dashicons dashicons-yes-alt" style="color:#00a32a"></span> <?php esc_html_e( 'The fatal-error-handler drop-in is installed. Fatals that happen before plugins load are recorded too.', 'ravnsight-detective' ); ?></p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'ravndet_admin' ); ?>
+			<input type="hidden" name="action" value="ravndet_dropin">
+			<input type="hidden" name="dropin_action" value="uninstall">
+			<button type="submit" class="button"><?php esc_html_e( 'Remove the drop-in', 'ravnsight-detective' ); ?></button>
+		</form>
+	<?php elseif ( 'foreign' === $dropin_status ) : ?>
+		<p><?php esc_html_e( 'Another fatal-error-handler.php exists in wp-content. Ravnsight Detective never overwrites it — early fatals are captured by that handler instead.', 'ravnsight-detective' ); ?></p>
+	<?php else : ?>
+		<p class="description"><?php esc_html_e( 'Optional. Catches fatal errors that happen before plugins load (for example a parse error in another plugin). A single file in wp-content, safe to delete at any time, always hands over to the WordPress core handler.', 'ravnsight-detective' ); ?></p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'ravndet_admin' ); ?>
+			<input type="hidden" name="action" value="ravndet_dropin">
+			<input type="hidden" name="dropin_action" value="install">
+			<button type="submit" class="button button-primary"><?php esc_html_e( 'Install the drop-in', 'ravnsight-detective' ); ?></button>
+		</form>
+	<?php endif; ?>
 </div>

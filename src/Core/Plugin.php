@@ -50,6 +50,8 @@ final class Plugin {
 		$this->modules = new ModuleRegistry();
 		$this->modules->register( \Ravnsight\Detective\Modules\ErrorDetective\Module::class );
 		$this->modules->register( \Ravnsight\Detective\Modules\ChangeDetective\Module::class );
+		$this->modules->register( \Ravnsight\Detective\Modules\PerfDetective\Module::class );
+		$this->modules->register( \Ravnsight\Detective\Modules\JsDetective\Module::class );
 		$this->modules->boot();
 
 		if ( is_admin() ) {

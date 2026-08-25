@@ -21,6 +21,7 @@ final class Admin {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_post_ravndet_save_settings', array( $this, 'save_settings' ) );
+		add_action( 'admin_post_ravndet_dropin', array( $this, 'dropin_action' ) );
 	}
 
 	/**
@@ -92,6 +93,8 @@ final class Admin {
 		$flags     = array(
 			'error_detective'  => FeatureFlags::enabled( 'error_detective' ),
 			'change_detective' => FeatureFlags::enabled( 'change_detective' ),
+			'perf_detective'   => FeatureFlags::enabled( 'perf_detective' ),
+			'js_detective'     => FeatureFlags::enabled( 'js_detective' ),
 		);
 		$delete_on_uninstall = (bool) get_option( 'ravndet_delete_data_on_uninstall', false );
 		$dropin_status       = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::status();
@@ -103,6 +106,27 @@ final class Admin {
 	 */
 	public function render_premium() {
 		require RAVNDET_PATH . 'templates/admin-premium.php';
+	}
+
+	/**
+	 * Install/remove the fatal-error-handler drop-in (PRG, dedicated action).
+	 */
+	public function dropin_action() {
+		check_admin_referer( 'ravndet_admin' );
+		if ( ! current_user_can( ravndet_cap() ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'ravnsight-detective' ) );
+		}
+		$dropin_action = isset( $_POST['dropin_action'] ) ? sanitize_key( wp_unslash( $_POST['dropin_action'] ) ) : '';
+		$notice        = 'saved';
+		if ( 'install' === $dropin_action ) {
+			$result = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::install();
+			$notice = is_wp_error( $result ) ? 'dropin_foreign' : 'dropin_installed';
+		} elseif ( 'uninstall' === $dropin_action ) {
+			\Ravnsight\Detective\Modules\ErrorDetective\Dropin::uninstall();
+			$notice = 'dropin_removed';
+		}
+		wp_safe_redirect( add_query_arg( 'ravndet_notice', $notice, ravndet_url( 'settings' ) ) );
+		exit;
 	}
 
 	/**
@@ -120,23 +144,12 @@ final class Admin {
 		update_option( 'ravndet_retention_days', $retention, false );
 		update_option( 'ravndet_delete_data_on_uninstall', isset( $_POST['delete_data_on_uninstall'] ) ? 1 : 0, false );
 
-		if ( isset( $_POST['dropin_action'] ) ) {
-			$dropin_action = sanitize_key( wp_unslash( $_POST['dropin_action'] ) );
-			if ( 'install' === $dropin_action ) {
-				$result = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::install();
-				if ( is_wp_error( $result ) ) {
-					wp_safe_redirect( add_query_arg( 'ravndet_notice', 'dropin_foreign', ravndet_url( 'settings' ) ) );
-					exit;
-				}
-			} elseif ( 'uninstall' === $dropin_action ) {
-				\Ravnsight\Detective\Modules\ErrorDetective\Dropin::uninstall();
-			}
-		}
-
 		FeatureFlags::save(
 			array(
 				'error_detective'  => isset( $_POST['module_error_detective'] ),
 				'change_detective' => isset( $_POST['module_change_detective'] ),
+				'perf_detective'   => isset( $_POST['module_perf_detective'] ),
+				'js_detective'     => isset( $_POST['module_js_detective'] ),
 			)
 		);
 

@@ -91,6 +91,10 @@ defined( 'ABSPATH' ) || exit;
 		<?php submit_button( __( 'Save settings', 'ravnsight-detective' ) ); ?>
 	</form>
 
+	<h2><?php esc_html_e( 'Site info for support', 'ravnsight-detective' ); ?></h2>
+	<p class="description"><?php esc_html_e( 'Everything a support technician asks for, ready to paste into a ticket: versions, server limits, theme and active plugins.', 'ravnsight-detective' ); ?></p>
+	<textarea readonly rows="12" style="width: 100%; max-width: 760px; font-family: monospace; font-size: 12px;" onclick="this.select()"><?php echo esc_textarea( $site_info ); ?></textarea>
+
 	<h2><?php esc_html_e( 'Early fatal capture', 'ravnsight-detective' ); ?></h2>
 	<?php if ( 'ours' === $dropin_status ) : ?>
 		<p><span class="dashicons dashicons-yes-alt" style="color:#00a32a"></span> <?php esc_html_e( 'The fatal-error-handler drop-in is installed. Fatals that happen before plugins load are recorded too.', 'ravnsight-detective' ); ?></p>

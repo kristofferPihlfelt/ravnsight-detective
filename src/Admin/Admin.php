@@ -98,6 +98,7 @@ final class Admin {
 			'mail_detective'   => FeatureFlags::enabled( 'mail_detective' ),
 		);
 		$savequeries = (bool) get_option( 'ravndet_savequeries', false );
+		$site_info   = Health::site_info();
 		$delete_on_uninstall = (bool) get_option( 'ravndet_delete_data_on_uninstall', false );
 		$dropin_status       = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::status();
 		require RAVNDET_PATH . 'templates/admin-settings.php';

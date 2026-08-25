@@ -76,4 +76,51 @@ final class Health {
 			'php_old'        => version_compare( PHP_VERSION, '8.1', '<' ),
 		);
 	}
+
+	/**
+	 * The "paste this to support" block: everything a support tech asks
+	 * for, as plain text. In Pro the same snapshot is visible directly on
+	 * the Ravnsight platform.
+	 *
+	 * @return string
+	 */
+	public static function site_info() {
+		global $wpdb;
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$theme  = wp_get_theme();
+		$parent = $theme->parent();
+		$lines  = array(
+			'== Site info (Ravnsight Detective ' . RAVNDET_VERSION . ') ==',
+			'Site URL:        ' . home_url(),
+			'WordPress:       ' . get_bloginfo( 'version' ) . ( is_multisite() ? ' (multisite)' : '' ),
+			'PHP:             ' . PHP_VERSION . ' (' . PHP_SAPI . ')',
+			'Database:        ' . $wpdb->db_server_info(),
+			'Web server:      ' . ( isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : 'unknown' ),
+			'HTTPS:           ' . ( is_ssl() ? 'yes' : 'no' ),
+			'Language:        ' . get_locale(),
+			'Timezone:        ' . wp_timezone_string(),
+			'Memory limit:    ' . ini_get( 'memory_limit' ) . ' (WP_MEMORY_LIMIT ' . ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : '-' ) . ')',
+			'Upload limits:   upload_max_filesize ' . ini_get( 'upload_max_filesize' ) . ', post_max_size ' . ini_get( 'post_max_size' ),
+			'Max execution:   ' . ini_get( 'max_execution_time' ) . ' s',
+			'WP_DEBUG:        ' . ( defined( 'WP_DEBUG' ) && WP_DEBUG ? 'on' : 'off' ),
+			'Object cache:    ' . ( wp_using_ext_object_cache() ? 'external' : 'default' ),
+			'Permalinks:      ' . ( get_option( 'permalink_structure' ) ? get_option( 'permalink_structure' ) : 'plain' ),
+			'Theme:           ' . $theme->get( 'Name' ) . ' ' . $theme->get( 'Version' ) . ( $parent ? ' (child of ' . $parent->get( 'Name' ) . ' ' . $parent->get( 'Version' ) . ')' : '' ),
+			'',
+			'== Active plugins ==',
+		);
+
+		$active = (array) get_option( 'active_plugins', array() );
+		foreach ( get_plugins() as $basename => $data ) {
+			if ( in_array( $basename, $active, true ) ) {
+				$lines[] = str_pad( substr( (string) $data['Name'], 0, 40 ), 42 ) . ( $data['Version'] ?? '' );
+			}
+		}
+
+		return implode( "\n", $lines );
+	}
 }

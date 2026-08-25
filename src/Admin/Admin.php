@@ -67,7 +67,8 @@ final class Admin {
 	 * Dashboard page.
 	 */
 	public function render_dashboard() {
-		$data = Queries::dashboard();
+		$data   = Queries::dashboard();
+		$health = Health::overview();
 		require RAVNDET_PATH . 'templates/admin-dashboard.php';
 	}
 

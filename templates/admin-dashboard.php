@@ -36,6 +36,51 @@ defined( 'ABSPATH' ) || exit;
 		</div>
 	</div>
 
+	<?php $ravndet_updates = count( $health['plugin_updates'] ) + count( $health['theme_updates'] ) + ( $health['core_update'] ? 1 : 0 ); ?>
+	<h2><?php esc_html_e( 'Needs attention', 'ravnsight-detective' ); ?></h2>
+	<?php if ( 0 === $ravndet_updates && ! $health['php_old'] ) : ?>
+		<p><?php esc_html_e( 'Everything is up to date: WordPress, plugins and themes are current.', 'ravnsight-detective' ); ?></p>
+	<?php else : ?>
+		<table class="widefat striped ravndet-table">
+			<thead><tr>
+				<th><?php esc_html_e( 'What', 'ravnsight-detective' ); ?></th>
+				<th><?php esc_html_e( 'Installed', 'ravnsight-detective' ); ?></th>
+				<th><?php esc_html_e( 'Available', 'ravnsight-detective' ); ?></th>
+			</tr></thead>
+			<tbody>
+			<?php if ( $health['core_update'] ) : ?>
+				<tr>
+					<td><strong><?php esc_html_e( 'WordPress core', 'ravnsight-detective' ); ?></strong></td>
+					<td><?php echo esc_html( $health['wp_version'] ); ?></td>
+					<td><?php echo esc_html( $health['core_update'] ); ?> — <a href="<?php echo esc_url( admin_url( 'update-core.php' ) ); ?>"><?php esc_html_e( 'update screen', 'ravnsight-detective' ); ?></a></td>
+				</tr>
+			<?php endif; ?>
+			<?php foreach ( $health['plugin_updates'] as $ravndet_up ) : ?>
+				<tr>
+					<td><?php echo esc_html( $ravndet_up['name'] ); ?> <code><?php echo esc_html( $ravndet_up['slug'] ); ?></code></td>
+					<td><?php echo esc_html( $ravndet_up['current'] ); ?></td>
+					<td><?php echo esc_html( $ravndet_up['new'] ); ?> — <a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'plugins screen', 'ravnsight-detective' ); ?></a></td>
+				</tr>
+			<?php endforeach; ?>
+			<?php foreach ( $health['theme_updates'] as $ravndet_up ) : ?>
+				<tr>
+					<td><?php echo esc_html( $ravndet_up['name'] ); ?> <code><?php echo esc_html( $ravndet_up['slug'] ); ?></code> (<?php esc_html_e( 'theme', 'ravnsight-detective' ); ?>)</td>
+					<td><?php echo esc_html( $ravndet_up['current'] ); ?></td>
+					<td><?php echo esc_html( $ravndet_up['new'] ); ?></td>
+				</tr>
+			<?php endforeach; ?>
+			<?php if ( $health['php_old'] ) : ?>
+				<tr>
+					<td><strong>PHP</strong></td>
+					<td><?php echo esc_html( $health['php_version'] ); ?></td>
+					<td><?php esc_html_e( 'Below 8.1 — ask your host to upgrade', 'ravnsight-detective' ); ?></td>
+				</tr>
+			<?php endif; ?>
+			</tbody>
+		</table>
+		<p class="description"><?php esc_html_e( 'Detective never updates anything for you — it tells you what needs doing and records what happens when you do it.', 'ravnsight-detective' ); ?></p>
+	<?php endif; ?>
+
 	<h2><?php esc_html_e( 'Top error sources, 7 days', 'ravnsight-detective' ); ?></h2>
 	<?php if ( empty( $data['offenders'] ) ) : ?>
 		<p><?php esc_html_e( 'No errors recorded. Quiet is good.', 'ravnsight-detective' ); ?></p>

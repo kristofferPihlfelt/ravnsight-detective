@@ -57,7 +57,10 @@ final class Plugin {
 
 		if ( is_admin() ) {
 			new \Ravnsight\Detective\Admin\Admin();
+			
 		}
+
+		
 
 		// Housekeeping: prune old signals daily via WP-cron (no external deps).
 		add_action( 'ravndet_daily', array( SignalStore::class, 'prune' ) );

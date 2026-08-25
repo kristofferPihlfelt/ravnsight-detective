@@ -58,6 +58,8 @@ final class SignalInfo {
 				return __( 'Database error', 'ravnsight-detective' );
 			case 'error.js_error':
 				return __( 'JavaScript error', 'ravnsight-detective' );
+			case 'error.mail_failed':
+				return __( 'E-mail failed', 'ravnsight-detective' );
 			default:
 				return $type;
 		}
@@ -115,6 +117,11 @@ final class SignalInfo {
 				return array(
 					'what'   => __( 'A PHP file in the active theme changed WITHOUT a theme update — someone edited it by hand, a deployment touched it, or in the worst case malware modified it. Theme updates that change many files at once are reported as updates, not as file edits.', 'ravnsight-detective' ),
 					'action' => __( 'If nobody on your team edited this file today, treat it seriously: open the file and look at what changed, and compare against a clean copy of the theme. functions.php is the most common target for both hurried developers and malware.', 'ravnsight-detective' ),
+				);
+			case 'error.mail_failed':
+				return array(
+					'what'   => __( 'WordPress tried to send an e-mail and the transport refused. This is the silent failure class: order confirmations, password resets and contact forms just stop arriving, and nothing in WordPress tells you. The message above is the mail server\'s actual reason.', 'ravnsight-detective' ),
+					'action' => __( '"Could not instantiate mail function" or connection errors mean the host blocks PHP mail — install an SMTP plugin. Authentication errors mean the SMTP plugin\'s credentials or API key expired. "Sender address rejected" points at a From address that does not match the domain (DMARC). The component shows which plugin tried to send.', 'ravnsight-detective' ),
 				);
 			case 'error.js_error':
 				return array(

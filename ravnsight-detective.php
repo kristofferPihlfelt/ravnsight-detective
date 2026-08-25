@@ -12,7 +12,7 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       ravnsight-detective
  *
- * Build: free (2026-08-25 12:14:02)
+ * Build: free (2026-08-25 12:18:13)
 
  * @package Ravnsight\Detective
  */
@@ -71,6 +71,15 @@ spl_autoload_register(
 
 // Global helper functions (ravndet_cap, ravndet_url …).
 require_once RAVNDET_PATH . 'src/Support/functions.php';
+
+/*
+ * Deep query profiling (opt-in in Settings): WordPress's own SAVEQUERIES
+ * switch, defined as early as a plugin can. Queries from here on are
+ * captured; wp-config.php remains untouched.
+ */
+if ( ! defined( 'SAVEQUERIES' ) && get_option( 'ravndet_savequeries' ) ) {
+	define( 'SAVEQUERIES', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- SAVEQUERIES is WordPress core's own profiling switch; defining it is the entire point of the opt-in.
+}
 
 
 

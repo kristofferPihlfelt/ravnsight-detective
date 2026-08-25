@@ -64,7 +64,19 @@ defined( 'ABSPATH' ) || exit;
 						<label><input type="checkbox" name="module_js_detective" <?php checked( $flags['js_detective'] ); ?>>
 						<?php esc_html_e( 'JavaScript Detective — record front-end JS errors (reports to this site\'s own REST API, never externally)', 'ravnsight-detective' ); ?></label>
 					</div>
+					<div>
+						<label><input type="checkbox" name="module_mail_detective" <?php checked( $flags['mail_detective'] ); ?>>
+						<?php esc_html_e( 'Mail Detective — record failed outgoing e-mail with the real transport error', 'ravnsight-detective' ); ?></label>
+					</div>
 					<p class="description"><?php esc_html_e( 'A disabled module records nothing; existing data stays until retention removes it.', 'ravnsight-detective' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Deep query profiling', 'ravnsight-detective' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="savequeries" <?php checked( $savequeries ); ?>>
+					<?php esc_html_e( 'Enable SAVEQUERIES — slow-request signals then include the exact slow query shapes', 'ravnsight-detective' ); ?></label>
+					<p class="description"><?php esc_html_e( 'WordPress then keeps every query of a request in memory. Fine for a debugging period; turn it off on very high-traffic sites when you are done.', 'ravnsight-detective' ); ?></p>
 				</td>
 			</tr>
 			<tr>

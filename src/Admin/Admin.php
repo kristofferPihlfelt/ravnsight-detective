@@ -95,7 +95,9 @@ final class Admin {
 			'change_detective' => FeatureFlags::enabled( 'change_detective' ),
 			'perf_detective'   => FeatureFlags::enabled( 'perf_detective' ),
 			'js_detective'     => FeatureFlags::enabled( 'js_detective' ),
+			'mail_detective'   => FeatureFlags::enabled( 'mail_detective' ),
 		);
+		$savequeries = (bool) get_option( 'ravndet_savequeries', false );
 		$delete_on_uninstall = (bool) get_option( 'ravndet_delete_data_on_uninstall', false );
 		$dropin_status       = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::status();
 		require RAVNDET_PATH . 'templates/admin-settings.php';
@@ -150,8 +152,10 @@ final class Admin {
 				'change_detective' => isset( $_POST['module_change_detective'] ),
 				'perf_detective'   => isset( $_POST['module_perf_detective'] ),
 				'js_detective'     => isset( $_POST['module_js_detective'] ),
+				'mail_detective'   => isset( $_POST['module_mail_detective'] ),
 			)
 		);
+		update_option( 'ravndet_savequeries', isset( $_POST['savequeries'] ) ? 1 : 0, true );
 
 		wp_safe_redirect( add_query_arg( 'ravndet_notice', 'saved', ravndet_url( 'settings' ) ) );
 		exit;

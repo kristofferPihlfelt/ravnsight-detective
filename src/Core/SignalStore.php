@@ -1,0 +1,110 @@
+<?php
+/**
+ * The single write path for signals. Grouping happens here: an existing
+ * fingerprint bumps count/last_seen — 50 000 identical warnings must be a
+ * handful of rows, never 50 000.
+ *
+ * @package Ravnsight\Detective
+ */
+
+namespace Ravnsight\Detective\Core;
+
+use Ravnsight\Detective\Support\Redactor;
+
+defined( 'ABSPATH' ) || exit;
+
+final class SignalStore {
+
+	/**
+	 * Record (or bump) a signal. Everything is redacted here — no caller
+	 * may bypass this method (DATA-POLICY: single write path, redaction
+	 * failures fail closed).
+	 *
+	 * @param string $type       Signal type from contracts/signal-types.md.
+	 * @param string $severity   info|warning|critical.
+	 * @param string $message    Human message (will be redacted).
+	 * @param array  $component  ['type' => plugin|theme|core|server, 'id' => slug, 'version' => x].
+	 * @param array  $context    Extra context (will be redacted, JSON-encoded).
+	 * @param string $scope      Optional scope (e.g. request URI, redacted).
+	 * @return bool
+	 */
+	public static function record( $type, $severity, $message, array $component = array(), array $context = array(), $scope = '' ) {
+		global $wpdb;
+
+		$message = Redactor::text( (string) $message );
+		$scope   = Redactor::uri( (string) $scope );
+		$context = Redactor::context( $context );
+		if ( null === $message || null === $context ) {
+			return false; // Redaction failed → drop, never store raw.
+		}
+
+		$fingerprint = self::fingerprint( $type, $message, $component );
+		$now         = time();
+		$table       = Migrator::table( 'signals' );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, single upsert.
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET count = count + 1, last_seen = %d, severity = %s WHERE fingerprint = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table() builds from $wpdb->prefix.
+				$now,
+				$severity,
+				$fingerprint
+			)
+		);
+
+		if ( $updated ) {
+			return true;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- own table.
+		$wpdb->insert(
+			$table,
+			array(
+				'type'              => $type,
+				'fingerprint'       => $fingerprint,
+				'severity'          => $severity,
+				'component_type'    => $component['type'] ?? null,
+				'component_id'      => isset( $component['id'] ) ? substr( (string) $component['id'], 0, 255 ) : null,
+				'component_version' => isset( $component['version'] ) ? substr( (string) $component['version'], 0, 64 ) : null,
+				'scope'             => '' !== $scope ? substr( $scope, 0, 128 ) : null,
+				'message'           => $message,
+				'context'           => wp_json_encode( $context ),
+				'count'             => 1,
+				'first_seen'        => $now,
+				'last_seen'         => $now,
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Stable fingerprint: type + normalised message + component. The same
+	 * error at the same place is the same row, whatever the timestamps say.
+	 *
+	 * @param string $type      Signal type.
+	 * @param string $message   Redacted message.
+	 * @param array  $component Component array.
+	 * @return string
+	 */
+	public static function fingerprint( $type, $message, array $component ) {
+		$normalised = preg_replace( '/\d+/', 'N', $message );
+
+		return substr( hash( 'sha256', $type . '|' . $normalised . '|' . ( $component['type'] ?? '' ) . '|' . ( $component['id'] ?? '' ) ), 0, 40 );
+	}
+
+	/**
+	 * Prune rows older than the retention window.
+	 */
+	public static function prune() {
+		global $wpdb;
+
+		$days = (int) get_option( 'ravndet_retention_days', 7 );
+		$days = min( 7, max( 1, $days ) );
+		
+		$table = Migrator::table( 'signals' );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE last_seen < %d", time() - $days * DAY_IN_SECONDS ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
+	}
+}

@@ -25,9 +25,10 @@ final class Snapshot {
 		$current = self::capture();
 		$table   = Migrator::table( 'snapshots' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
-		$previous_row = $wpdb->get_row( "SELECT environment FROM {$table} ORDER BY taken_at DESC LIMIT 1" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, daily job.
+		$previous_row = $wpdb->get_row( $wpdb->prepare( 'SELECT environment FROM %i ORDER BY taken_at DESC LIMIT 1', $table ) );
 		$previous     = $previous_row ? json_decode( (string) $previous_row->environment, true ) : null;
+		// phpcs:enable
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- own table.
 		$wpdb->insert(
@@ -39,8 +40,9 @@ final class Snapshot {
 		);
 
 		// Keep 30 snapshots.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
-		$wpdb->query( "DELETE FROM {$table} WHERE id NOT IN (SELECT id FROM (SELECT id FROM {$table} ORDER BY taken_at DESC LIMIT 30) keep_rows)" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id NOT IN (SELECT id FROM (SELECT id FROM %i ORDER BY taken_at DESC LIMIT 30) keep_rows)', $table, $table ) );
+		// phpcs:enable
 
 		if ( is_array( $previous ) ) {
 			self::diff( $previous, $current );

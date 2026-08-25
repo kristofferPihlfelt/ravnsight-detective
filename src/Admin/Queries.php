@@ -1,6 +1,7 @@
 <?php
 /**
- * Read-side queries for the admin screens.
+ * Read-side queries for the admin screens. Table names go through the %i
+ * placeholder (WP 6.2+); LIKE patterns are bound parameters.
  *
  * @package Ravnsight\Detective
  */
@@ -23,14 +24,16 @@ final class Queries {
 		$table = Migrator::table( 'signals' );
 		$day   = time() - DAY_IN_SECONDS;
 		$week  = time() - WEEK_IN_SECONDS;
+		$error = $wpdb->esc_like( 'error.' ) . '%';
+		$chang = $wpdb->esc_like( 'change.' ) . '%';
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, admin read.
-		$errors_24h = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(count),0) FROM {$table} WHERE type LIKE 'error.%%' AND last_seen >= %d", $day ) );
-		$errors_7d  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(count),0) FROM {$table} WHERE type LIKE 'error.%%' AND last_seen >= %d", $week ) );
-		$changes_7d = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE type LIKE 'change.%%' AND last_seen >= %d", $week ) );
-		$fatals_24h = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(count),0) FROM {$table} WHERE type = 'error.php_fatal' AND last_seen >= %d", $day ) );
-		$offenders  = $wpdb->get_results( $wpdb->prepare( "SELECT component_type, component_id, SUM(count) hits FROM {$table} WHERE type LIKE 'error.%%' AND last_seen >= %d AND component_id IS NOT NULL AND component_id <> '' GROUP BY component_type, component_id ORDER BY hits DESC LIMIT 5", $week ) );
-		$latest     = $wpdb->get_results( "SELECT * FROM {$table} ORDER BY last_seen DESC LIMIT 8" );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin-only read, indexed columns.
+		$errors_24h = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COALESCE(SUM(count),0) FROM %i WHERE type LIKE %s AND last_seen >= %d', $table, $error, $day ) );
+		$errors_7d  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COALESCE(SUM(count),0) FROM %i WHERE type LIKE %s AND last_seen >= %d', $table, $error, $week ) );
+		$changes_7d = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type LIKE %s AND last_seen >= %d', $table, $chang, $week ) );
+		$fatals_24h = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COALESCE(SUM(count),0) FROM %i WHERE type = %s AND last_seen >= %d', $table, 'error.php_fatal', $day ) );
+		$offenders  = $wpdb->get_results( $wpdb->prepare( "SELECT component_type, component_id, SUM(count) hits FROM %i WHERE type LIKE %s AND last_seen >= %d AND component_id IS NOT NULL AND component_id <> '' GROUP BY component_type, component_id ORDER BY hits DESC LIMIT 5", $table, $error, $week ) );
+		$latest     = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY last_seen DESC LIMIT 8', $table ) );
 		// phpcs:enable
 
 		return array(
@@ -56,21 +59,12 @@ final class Queries {
 		global $wpdb;
 		$table = Migrator::table( 'signals' );
 
-		$where  = array( '1=1' );
-		$params = array();
-		if ( in_array( $type_group, array( 'error', 'change' ), true ) ) {
-			$where[]  = 'type LIKE %s';
-			$params[] = $type_group . '.%';
-		}
-		if ( in_array( $severity, array( 'info', 'warning', 'critical' ), true ) ) {
-			$where[]  = 'severity = %s';
-			$params[] = $severity;
-		}
+		$type_like = in_array( $type_group, array( 'error', 'change' ), true ) ? $wpdb->esc_like( $type_group . '.' ) . '%' : '%';
+		// Severity is validated against a fixed list; '%' matches all when unset.
+		$severity_like = in_array( $severity, array( 'info', 'warning', 'critical' ), true ) ? $severity : '%';
 
-		$sql = "SELECT * FROM {$table} WHERE " . implode( ' AND ', $where ) . ' ORDER BY last_seen DESC LIMIT 200';
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- own table; $sql assembled from fixed fragments, params prepared below.
-		return $params ? $wpdb->get_results( $wpdb->prepare( $sql, ...$params ) ) : $wpdb->get_results( $sql );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin-only read.
+		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE type LIKE %s AND severity LIKE %s ORDER BY last_seen DESC LIMIT 200', $table, $type_like, $severity_like ) );
 		// phpcs:enable
 	}
 }

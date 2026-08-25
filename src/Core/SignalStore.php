@@ -42,15 +42,17 @@ final class SignalStore {
 		$now         = time();
 		$table       = Migrator::table( 'signals' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, single upsert.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET count = count + 1, last_seen = %d, severity = %s WHERE fingerprint = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table() builds from $wpdb->prefix.
+				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s WHERE fingerprint = %s',
+				$table,
 				$now,
 				$severity,
 				$fingerprint
 			)
 		);
+		// phpcs:enable
 
 		if ( $updated ) {
 			return true;
@@ -104,7 +106,8 @@ final class SignalStore {
 		
 		$table = Migrator::table( 'signals' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE last_seen < %d", time() - $days * DAY_IN_SECONDS ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE last_seen < %d', $table, time() - $days * DAY_IN_SECONDS ) );
+		// phpcs:enable
 	}
 }

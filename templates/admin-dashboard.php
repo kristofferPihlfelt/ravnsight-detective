@@ -47,11 +47,11 @@ defined( 'ABSPATH' ) || exit;
 				<th><?php esc_html_e( 'Occurrences', 'ravnsight-detective' ); ?></th>
 			</tr></thead>
 			<tbody>
-			<?php foreach ( $data['offenders'] as $row ) : ?>
+			<?php foreach ( $data['offenders'] as $ravndet_row ) : ?>
 				<tr>
-					<td><code><?php echo esc_html( $row->component_id ); ?></code></td>
-					<td><?php echo esc_html( $row->component_type ); ?></td>
-					<td><?php echo esc_html( number_format_i18n( (int) $row->hits ) ); ?></td>
+					<td><code><?php echo esc_html( $ravndet_row->component_id ); ?></code></td>
+					<td><?php echo esc_html( $ravndet_row->component_type ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( (int) $ravndet_row->hits ) ); ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>

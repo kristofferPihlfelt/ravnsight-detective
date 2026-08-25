@@ -2,13 +2,13 @@
 Contributors: ravnsight
 Tags: error log, error monitoring, debugging, change log, activity log
 Requires at least: 6.5
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-See your site from the inside: PHP errors grouped and attributed to the plugin that caused them, plus a timeline of every plugin, theme and core change.
+PHP errors grouped and attributed to the plugin that caused them, plus a timeline of every plugin, theme and core change.
 
 == Description ==
 

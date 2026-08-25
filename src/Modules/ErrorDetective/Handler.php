@@ -32,7 +32,7 @@ final class Handler {
 	 * Register the chained handler and the fatal catcher.
 	 */
 	public static function arm() {
-		self::$previous = set_error_handler( array( self::class, 'on_error' ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- the whole point of the plugin; we delegate to the previous handler.
+		self::$previous = set_error_handler( array( self::class, 'on_error' ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- error observation IS the product; the previous handler is always delegated to, site behaviour is unchanged.
 		register_shutdown_function( array( self::class, 'on_shutdown' ) );
 	}
 
@@ -47,7 +47,7 @@ final class Handler {
 	 * @return bool
 	 */
 	public static function on_error( $errno, $errstr, $errfile = '', $errline = 0 ) {
-		if ( ! self::$recording && ( error_reporting() & $errno ) ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- respecting @-suppression like core does.
+		if ( ! self::$recording && ( error_reporting() & $errno ) ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, PluginCheck.CodeAnalysis.PHPErrorReporting.DirectErrorReportingCall -- READ-ONLY error_reporting() call to honour @-suppression exactly like core; nothing is changed.
 			self::$recording = true;
 			try {
 				self::record( $errno, (string) $errstr, (string) $errfile, (int) $errline );

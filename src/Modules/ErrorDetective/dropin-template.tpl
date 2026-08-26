@@ -38,7 +38,7 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 				}
 				$fingerprint = substr( hash( 'sha256', 'error.php_fatal|' . preg_replace( '/\\d+/', 'N', $message ) . '|' . $ctype . '|' . $cid ), 0, 40 );
 				$wpdb        = $GLOBALS['wpdb'];
-				$updated     = $wpdb->query( $wpdb->prepare( 'UPDATE {{TABLE}} SET count = count + 1, last_seen = %d, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s', time(), isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null, isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) $_SERVER['REQUEST_URI'], 0, 191 ) : null, $fingerprint ) );
+				$updated     = $wpdb->query( $wpdb->prepare( 'UPDATE {{TABLE}} SET count = count + 1, iso_count = iso_count + %d, last_seen = %d, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s', empty( $GLOBALS['ravnsight_isolation_active'] ) ? 0 : 1, time(), isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null, isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) $_SERVER['REQUEST_URI'], 0, 191 ) : null, $fingerprint ) );
 				if ( ! $updated ) {
 					$wpdb->insert( '{{TABLE}}', array(
 						'type'           => 'error.php_fatal',
@@ -51,6 +51,7 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 						'scope'          => isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null,
 						'scope_local'    => isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) $_SERVER['REQUEST_URI'], 0, 191 ) : null,
 						'count'          => 1,
+						'iso_count'      => empty( $GLOBALS['ravnsight_isolation_active'] ) ? 0 : 1,
 						'first_seen'     => time(),
 						'last_seen'      => time(),
 					) );

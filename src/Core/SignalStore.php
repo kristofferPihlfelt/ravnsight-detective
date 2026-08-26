@@ -45,12 +45,17 @@ final class SignalStore {
 		$fingerprint = self::fingerprint( $type, $message, $component );
 		$now         = time();
 		$table       = Migrator::table( 'signals' );
+		// Occurrences INSIDE an isolated admin session count separately:
+		// they are the ONLY ones that can acquit a suspect (the plugin is
+		// still active for every other visitor).
+		$iso = empty( $GLOBALS['ravnsight_isolation_active'] ) ? 0 : 1;
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, pending_fix = NULL, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s',
+				'UPDATE %i SET count = count + 1, iso_count = iso_count + %d, last_seen = %d, severity = %s, resolved_detected = NULL, pending_fix = NULL, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s',
 				$table,
+				$iso,
 				$now,
 				$severity,
 				'' !== $scope ? $scope : null,
@@ -79,6 +84,7 @@ final class SignalStore {
 				'message'           => $message,
 				'context'           => wp_json_encode( $context ),
 				'count'             => 1,
+				'iso_count'         => $iso,
 				'first_seen'        => $now,
 				'last_seen'         => $now,
 			)

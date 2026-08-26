@@ -22,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
 	<?php if ( isset( $_GET['ravndet_notice'] ) && 'dropin_removed' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Drop-in removed.', 'ravnsight-detective' ); ?></p></div>
 	<?php endif; ?>
+	<?php  ?>
 	<?php if ( isset( $_GET['ravndet_notice'] ) && 'dropin_foreign' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
 		<div class="notice notice-error"><p><?php esc_html_e( 'Another fatal-error-handler.php already exists — Ravnsight Detective will not overwrite it.', 'ravnsight-detective' ); ?></p></div>
 	<?php endif; ?>
@@ -110,6 +111,8 @@ defined( 'ABSPATH' ) || exit;
 	<h2><?php esc_html_e( 'Site info for support', 'ravnsight-detective' ); ?></h2>
 	<p class="description"><?php esc_html_e( 'Everything a support technician asks for, ready to paste into a ticket: versions, server limits, theme and active plugins.', 'ravnsight-detective' ); ?></p>
 	<textarea readonly rows="12" style="width: 100%; max-width: 760px; font-family: monospace; font-size: 12px;" onclick="this.select()"><?php echo esc_textarea( $site_info ); ?></textarea>
+
+	<?php  ?>
 
 	<h2><?php esc_html_e( 'Early fatal capture', 'ravnsight-detective' ); ?></h2>
 	<?php if ( 'ours' === $dropin_status ) : ?>

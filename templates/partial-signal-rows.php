@@ -82,6 +82,7 @@ use Ravnsight\Detective\Support\SignalInfo;
 					</table>
 
 					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
+					<?php  ?>
 					<?php if ( null === $ravndet_row->resolved_detected && 0 !== strpos( (string) $ravndet_row->type, 'change.' ) ) : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ravndet-resolve">
 							<?php wp_nonce_field( 'ravndet_admin' ); ?>

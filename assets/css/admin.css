@@ -58,3 +58,11 @@ details.ravndet-signal:has(.ravndet-badge-resolved) > summary { opacity: 0.65; }
 .ravndet-resolve { background: #f0faf1; border-color: #9ed9a8; }
 .ravndet-resolve .button { background: #007017; border-color: #007017; color: #fff; }
 .ravndet-resolve .button:hover { background: #005c13; border-color: #005c13; color: #fff; }
+
+/* Isolation CTA */
+.ravndet-isolation-cta { margin: 10px 0; padding: 14px 16px; border-radius: 6px; background: #132240; color: #fff; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ravndet-isolation-cta-text { display: flex; flex-direction: column; gap: 2px; max-width: 560px; }
+.ravndet-isolation-cta-text strong { font-size: 13px; }
+.ravndet-isolation-cta-text span { font-size: 12px; opacity: 0.75; line-height: 1.5; }
+.ravndet-test-btn.button { background: #fff; border-color: #fff; color: #132240; font-weight: 600; padding: 4px 18px; height: auto; }
+.ravndet-test-btn.button:hover { background: #e8ecf3; border-color: #e8ecf3; color: #132240; }

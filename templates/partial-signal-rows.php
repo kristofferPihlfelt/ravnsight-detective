@@ -82,6 +82,24 @@ use Ravnsight\Detective\Support\SignalInfo;
 					</table>
 
 					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
+					<?php if ( null !== $ravndet_corr ) : ?>
+						<div class="ravndet-correlation ravndet-correlation-<?php echo esc_attr( $ravndet_corr['confidence'] ); ?>">
+							<strong><?php esc_html_e( 'Likely cause', 'ravnsight-detective' ); ?> — <?php echo esc_html( \Ravnsight\Detective\Support\Correlator::confidence_label( $ravndet_corr['confidence'] ) ); ?></strong>
+							<ul>
+								<?php foreach ( $ravndet_corr['lines'] as $ravndet_corr_line ) : ?>
+									<li class="ravndet-corr-<?php echo esc_attr( '+' === $ravndet_corr_line['sign'] ? 'plus' : ( '-' === $ravndet_corr_line['sign'] ? 'minus' : 'alt' ) ); ?>"><?php echo esc_html( $ravndet_corr_line['sign'] . ' ' . $ravndet_corr_line['text'] ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+							<em><?php esc_html_e( 'Correlation, not proven cause.', 'ravnsight-detective' ); ?></em>
+						</div>
+					<?php endif; ?>
+					<?php if ( $ravndet_guide['what'] ) : ?>
+						<div class="ravndet-guidance">
+							<p><strong><?php esc_html_e( 'What this means', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['what'] ); ?></p>
+							<p><strong><?php esc_html_e( 'What to do', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['action'] ); ?></p>
+						</div>
+					<?php endif; ?>
+
 					<?php  ?>
 					<?php if ( null === $ravndet_row->resolved_detected && 0 !== strpos( (string) $ravndet_row->type, 'change.' ) ) : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ravndet-resolve">
@@ -151,23 +169,6 @@ use Ravnsight\Detective\Support\SignalInfo;
 								?>
 							<?php endif; ?>
 						</p>
-					<?php endif; ?>
-					<?php if ( null !== $ravndet_corr ) : ?>
-						<div class="ravndet-correlation ravndet-correlation-<?php echo esc_attr( $ravndet_corr['confidence'] ); ?>">
-							<strong><?php esc_html_e( 'Likely cause', 'ravnsight-detective' ); ?> — <?php echo esc_html( \Ravnsight\Detective\Support\Correlator::confidence_label( $ravndet_corr['confidence'] ) ); ?></strong>
-							<ul>
-								<?php foreach ( $ravndet_corr['lines'] as $ravndet_corr_line ) : ?>
-									<li class="ravndet-corr-<?php echo esc_attr( '+' === $ravndet_corr_line['sign'] ? 'plus' : ( '-' === $ravndet_corr_line['sign'] ? 'minus' : 'alt' ) ); ?>"><?php echo esc_html( $ravndet_corr_line['sign'] . ' ' . $ravndet_corr_line['text'] ); ?></li>
-								<?php endforeach; ?>
-							</ul>
-							<em><?php esc_html_e( 'Correlation, not proven cause.', 'ravnsight-detective' ); ?></em>
-						</div>
-					<?php endif; ?>
-					<?php if ( $ravndet_guide['what'] ) : ?>
-						<div class="ravndet-guidance">
-							<p><strong><?php esc_html_e( 'What this means', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['what'] ); ?></p>
-							<p><strong><?php esc_html_e( 'What to do', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['action'] ); ?></p>
-						</div>
 					<?php endif; ?>
 
 					<?php if ( $ravndet_is_error && $ravndet_row->component_id && 'plugin' === $ravndet_row->component_type ) : ?>

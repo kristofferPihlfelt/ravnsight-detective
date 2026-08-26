@@ -21,13 +21,14 @@ final class Correlator {
 	const NEAR_GAP_MINUTES = 60;
 
 	/**
-	 * Analyze one signal row. Null unless it is a critical error.
+	 * Analyze one signal row. Errors, warnings and performance signals all
+	 * get an analysis — change signals are the suspects, not the subjects.
 	 *
 	 * @param object $row Signal row (from the ravndet_signals table).
 	 * @return array{confidence: string, lines: array<int, array{sign: string, text: string}>}|null
 	 */
 	public static function analyze( $row ) {
-		if ( 'critical' !== (string) $row->severity || 0 !== strpos( (string) $row->type, 'error.' ) ) {
+		if ( 0 !== strpos( (string) $row->type, 'error.' ) && 0 !== strpos( (string) $row->type, 'perf.' ) ) {
 			return null;
 		}
 

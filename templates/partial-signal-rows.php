@@ -87,19 +87,26 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<input type="hidden" name="action" value="ravndet_resolve" />
 							<input type="hidden" name="signal_id" value="<?php echo esc_attr( (string) $ravndet_row->id ); ?>" />
 							<strong>✓ <?php esc_html_e( 'Problem fixed? Mark it resolved', 'ravnsight-detective' ); ?></strong>
+							<?php $ravndet_suspects = null !== $ravndet_corr && ! empty( $ravndet_corr['suspects'] ) ? $ravndet_corr['suspects'] : array_filter( array( (string) $ravndet_row->component_id ) ); ?>
 							<label>
-								<?php esc_html_e( 'What fixed it?', 'ravnsight-detective' ); ?>
-								<select name="fix_type">
-									<option value="updated"><?php esc_html_e( 'Updated', 'ravnsight-detective' ); ?></option>
-									<option value="deactivated"><?php esc_html_e( 'Deactivated', 'ravnsight-detective' ); ?></option>
-									<option value="rolled_back"><?php esc_html_e( 'Rolled back', 'ravnsight-detective' ); ?></option>
-									<option value="config"><?php esc_html_e( 'Config change', 'ravnsight-detective' ); ?></option>
-									<option value="other"><?php esc_html_e( 'Other', 'ravnsight-detective' ); ?></option>
+								<?php esc_html_e( 'The cause was', 'ravnsight-detective' ); ?>
+								<select name="actual_component" onchange="this.form.querySelector('.ravndet-other-cause').style.display = this.value === '__other' ? '' : 'none';">
+									<?php foreach ( $ravndet_suspects as $ravndet_suspect ) : ?>
+										<option value="<?php echo esc_attr( $ravndet_suspect ); ?>"><?php echo esc_html( $ravndet_suspect ); ?></option>
+									<?php endforeach; ?>
+									<option value="__other"><?php esc_html_e( 'Something else / not sure', 'ravnsight-detective' ); ?></option>
 								</select>
 							</label>
+							<input type="text" name="actual_component_other" class="ravndet-other-cause" style="display:none" placeholder="<?php esc_attr_e( 'What was it?', 'ravnsight-detective' ); ?>" />
 							<label>
-								<?php esc_html_e( 'Caused by', 'ravnsight-detective' ); ?>
-								<input type="text" name="actual_component" value="<?php echo esc_attr( (string) $ravndet_row->component_id ); ?>" />
+								<?php esc_html_e( 'and I fixed it by', 'ravnsight-detective' ); ?>
+								<select name="fix_type">
+									<option value="updated"><?php esc_html_e( 'updating it', 'ravnsight-detective' ); ?></option>
+									<option value="deactivated"><?php esc_html_e( 'deactivating it', 'ravnsight-detective' ); ?></option>
+									<option value="rolled_back"><?php esc_html_e( 'rolling it back', 'ravnsight-detective' ); ?></option>
+									<option value="config"><?php esc_html_e( 'changing configuration', 'ravnsight-detective' ); ?></option>
+									<option value="other"><?php esc_html_e( 'something else', 'ravnsight-detective' ); ?></option>
+								</select>
 							</label>
 							<?php  ?>
 							<?php if ( ! get_option( 'ravndet_share_outcomes' ) ) : ?>

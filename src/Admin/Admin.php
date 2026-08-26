@@ -153,6 +153,13 @@ final class Admin {
 		$fix_type  = isset( $_POST['fix_type'] ) ? sanitize_key( wp_unslash( $_POST['fix_type'] ) ) : 'other';
 		$outcome   = isset( $_POST['outcome'] ) && 'wrong_track' === $_POST['outcome'] ? 'wrong_track' : 'solved';
 		$actual    = isset( $_POST['actual_component'] ) ? sanitize_text_field( wp_unslash( $_POST['actual_component'] ) ) : '';
+		if ( '__other' === $actual ) {
+			$actual = isset( $_POST['actual_component_other'] ) ? sanitize_text_field( wp_unslash( $_POST['actual_component_other'] ) ) : '';
+		}
+		// The version the component has NOW is the fix version — captured
+		// automatically so "updated snabbkassa" becomes "updated snabbkassa
+		// to 1.4.3" in the learning data without the user typing anything.
+		$actual_version = '' !== $actual ? \Ravnsight\Detective\Support\ComponentResolver::current_version( $actual ) : '';
 		if ( ! in_array( $fix_type, array( 'deactivated', 'updated', 'rolled_back', 'config', 'other' ), true ) ) {
 			$fix_type = 'other';
 		}
@@ -170,6 +177,7 @@ final class Admin {
 			'outcome'          => $outcome,
 			'fix_type'         => $fix_type,
 			'actual_component' => $actual,
+			'actual_version'   => $actual_version,
 			'user'             => true,
 			'at'               => time(),
 		);
@@ -201,6 +209,7 @@ final class Admin {
 							'confidence'       => null !== $suspect ? $suspect['confidence'] : null,
 							'suspect_component' => (string) $row->component_id,
 							'actual_component' => '' !== $actual ? $actual : null,
+							'actual_component_version' => '' !== $actual_version ? $actual_version : null,
 							'fix_type'         => $fix_type,
 							'outcome'          => $outcome,
 						)

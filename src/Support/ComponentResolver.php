@@ -81,6 +81,24 @@ final class ComponentResolver {
 	 * @param string $slug Plugin directory slug.
 	 * @return string
 	 */
+	/**
+	 * Current installed version of a component slug (plugin or theme),
+	 * '' when unknown. Used at resolve-time: the version NOW is the fix
+	 * version.
+	 *
+	 * @param string $slug Component slug.
+	 * @return string
+	 */
+	public static function current_version( $slug ) {
+		$plugin = self::plugin_version( $slug );
+		if ( '' !== $plugin ) {
+			return $plugin;
+		}
+		$theme = wp_get_theme( $slug );
+
+		return $theme->exists() ? (string) $theme->get( 'Version' ) : '';
+	}
+
 	private static function plugin_version( $slug ) {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';

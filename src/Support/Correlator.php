@@ -95,6 +95,7 @@ final class Correlator {
 			return array(
 				'confidence' => 'low',
 				'lines'      => $lines,
+				'suspects'   => array( $suspect_component ),
 			);
 		}
 
@@ -150,7 +151,42 @@ final class Correlator {
 		return array(
 			'confidence' => $confidence,
 			'lines'      => $lines,
+			'suspects'   => self::collect_suspects( $row, $change, $changes, $own_slugs ),
 		);
+	}
+
+	/**
+	 * Ordered candidate list for the "what was the cause" dropdown: the
+	 * prime suspect first, then alternatives, then the component the error
+	 * itself names. Concrete choices beat free text — they are what makes
+	 * the hypothesis check ("did we guess right?") possible at all.
+	 *
+	 * @param object      $row       Signal row.
+	 * @param object|null $change    Best change candidate.
+	 * @param array       $changes   All change rows in the window.
+	 * @param array       $own_slugs Our own slugs (never suspects).
+	 * @return array<int, string>
+	 */
+	private static function collect_suspects( $row, $change, $changes, $own_slugs ) {
+		$suspects = array();
+		if ( null !== $change && ! empty( $change->component_id ) ) {
+			$suspects[] = (string) $change->component_id;
+		}
+		if ( ! empty( $row->component_id ) ) {
+			$suspects[] = (string) $row->component_id;
+		}
+		foreach ( (array) $changes as $change_row ) {
+			if ( count( $suspects ) >= 6 ) {
+				break;
+			}
+			$slug = (string) $change_row->component_id;
+			if ( '' === $slug || in_array( $slug, $own_slugs, true ) ) {
+				continue;
+			}
+			$suspects[] = $slug;
+		}
+
+		return array_values( array_unique( $suspects ) );
 	}
 
 	/**

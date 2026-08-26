@@ -45,7 +45,7 @@ final class SignalStore {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s WHERE fingerprint = %s',
+				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL WHERE fingerprint = %s',
 				$table,
 				$now,
 				$severity,
@@ -98,6 +98,31 @@ final class SignalStore {
 	/**
 	 * Prune rows older than the retention window.
 	 */
+	/**
+	 * Silence scan (daily): an error that has stopped occurring is a
+	 * RESOLUTION — and the real stop time is the last occurrence, which is
+	 * what the reverse correlator needs. Threshold: 24 h, or 3× the
+	 * signal\'s own average interval for high-frequency signals (clamped
+	 * to 72 h so a quiet weekend never marks a weekly error resolved).
+	 */
+	public static function detect_resolved() {
+		global $wpdb;
+
+		$table = Migrator::table( 'signals' );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, fingerprint, count, first_seen, last_seen FROM %i WHERE resolved_detected IS NULL AND ( type LIKE %s OR type LIKE %s ) AND last_seen < %d", $table, $wpdb->esc_like( 'error.' ) . '%', $wpdb->esc_like( 'perf.' ) . '%', time() - DAY_IN_SECONDS ) );
+
+		foreach ( (array) $rows as $row ) {
+			$avg_interval = $row->count > 1 ? ( (int) $row->last_seen - (int) $row->first_seen ) / ( (int) $row->count - 1 ) : 0;
+			$threshold    = (int) min( max( 3 * $avg_interval, DAY_IN_SECONDS ), 3 * DAY_IN_SECONDS );
+			if ( time() - (int) $row->last_seen < $threshold ) {
+				continue;
+			}
+			$wpdb->update( $table, array( 'resolved_detected' => time() ), array( 'id' => (int) $row->id ), array( '%d' ), array( '%d' ) );
+		}
+		// phpcs:enable
+	}
+
 	public static function prune() {
 		global $wpdb;
 

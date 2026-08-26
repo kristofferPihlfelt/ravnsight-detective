@@ -65,6 +65,7 @@ final class Plugin {
 		
 
 		// Housekeeping: prune old signals daily via WP-cron (no external deps).
+		add_action( 'ravndet_daily', array( SignalStore::class, 'detect_resolved' ), 5 ); // Before prune: silences must be found while the rows still exist.
 		add_action( 'ravndet_daily', array( SignalStore::class, 'prune' ) );
 		if ( ! wp_next_scheduled( 'ravndet_daily' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'ravndet_daily' );

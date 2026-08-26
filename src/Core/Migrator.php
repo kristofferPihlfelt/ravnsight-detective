@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Migrator {
 
-	const SCHEMA_VERSION = 1;
+	const SCHEMA_VERSION = 2;
 	const OPTION         = 'ravndet_db_version';
 
 	/**
@@ -63,6 +63,7 @@ final class Migrator {
 				count INT UNSIGNED NOT NULL DEFAULT 1,
 				first_seen INT UNSIGNED NOT NULL,
 				last_seen INT UNSIGNED NOT NULL,
+				resolved_detected INT UNSIGNED NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY fingerprint (fingerprint),
 				KEY type_last_seen (type, last_seen),

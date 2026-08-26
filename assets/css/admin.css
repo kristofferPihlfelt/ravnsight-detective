@@ -35,3 +35,13 @@
 .ravndet-guidance { background: #f0f6fc; border: 1px solid #c5d9ed; border-radius: 6px; padding: 10px 14px; margin-top: 10px; max-width: 760px; }
 .ravndet-guidance p { margin: 6px 0; }
 .ravndet-copy-hint { color: #646970; font-style: italic; margin-top: 8px; }
+
+/* Correlation box */
+.ravndet-correlation { margin: 10px 0; padding: 10px 12px; border-radius: 6px; background: #f0f6fc; border: 1px solid #c5d9ed; }
+.ravndet-correlation-high { background: #fcf0f1; border-color: #f0c0c5; }
+.ravndet-correlation-medium { background: #fcf9e8; border-color: #ebd8a8; }
+.ravndet-correlation ul { margin: 6px 0; }
+.ravndet-correlation li { margin: 2px 0; }
+.ravndet-corr-minus { color: #b32d2e; }
+.ravndet-corr-alt { color: #646970; }
+.ravndet-correlation em { color: #646970; font-size: 12px; }

@@ -56,7 +56,6 @@ final class Health {
 		}
 
 		$disk_free  = @disk_free_space( ABSPATH ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- open_basedir may forbid it; null is a valid answer.
-		$disk_total = @disk_total_space( ABSPATH ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- as above.
 
 		return array(
 			'server'         => array(
@@ -66,7 +65,10 @@ final class Health {
 				'post_max'        => (string) ini_get( 'post_max_size' ),
 				'max_exec'        => (int) ini_get( 'max_execution_time' ),
 				'disk_free_gb'    => false !== $disk_free ? round( $disk_free / 1073741824, 1 ) : null,
-				'disk_low'        => false !== $disk_free && false !== $disk_total && $disk_total > 0 && ( $disk_free < 2 * 1073741824 || $disk_free / $disk_total < 0.1 ),
+				// Absolute free space only. A percentage rule misfires on
+				// shared hosting: 42 GB free is never "low" even if it is
+				// 8% of a huge shared volume.
+				'disk_low'        => false !== $disk_free && $disk_free < 2 * 1073741824,
 			),
 			'plugin_updates' => $plugin_updates,
 			'theme_updates'  => $theme_updates,

@@ -27,6 +27,9 @@ use Ravnsight\Detective\Support\SignalInfo;
 			<details class="ravndet-signal ravndet-severity-<?php echo esc_attr( $ravndet_row->severity ); ?>">
 				<summary>
 					<span class="ravndet-signal-badge ravndet-badge-<?php echo esc_attr( $ravndet_row->severity ); ?>"><?php echo esc_html( SignalInfo::label( $ravndet_row->type ) ); ?></span>
+					<?php if ( null !== $ravndet_row->resolved_detected ) : ?>
+						<span class="ravndet-signal-badge ravndet-badge-resolved">✓ <?php esc_html_e( 'Resolved', 'ravnsight-detective' ); ?></span>
+					<?php endif; ?>
 					<span class="ravndet-signal-msg"><?php echo esc_html( wp_html_excerpt( (string) $ravndet_row->message, 110, '…' ) ); ?></span>
 					<span class="ravndet-signal-meta">
 						<?php if ( $ravndet_row->component_id ) : ?><code><?php echo esc_html( $ravndet_row->component_id ); ?></code><?php endif; ?>
@@ -83,7 +86,7 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<?php wp_nonce_field( 'ravndet_admin' ); ?>
 							<input type="hidden" name="action" value="ravndet_resolve" />
 							<input type="hidden" name="signal_id" value="<?php echo esc_attr( (string) $ravndet_row->id ); ?>" />
-							<strong><?php esc_html_e( 'Mark as resolved', 'ravnsight-detective' ); ?></strong>
+							<strong>✓ <?php esc_html_e( 'Problem fixed? Mark it resolved', 'ravnsight-detective' ); ?></strong>
 							<label>
 								<?php esc_html_e( 'What fixed it?', 'ravnsight-detective' ); ?>
 								<select name="fix_type">
@@ -109,7 +112,30 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<button class="button"><?php esc_html_e( 'Save', 'ravnsight-detective' ); ?></button>
 						</form>
 					<?php elseif ( null !== $ravndet_row->resolved_detected ) : ?>
-						<p class="ravndet-resolved-note"><?php esc_html_e( 'Marked as resolved.', 'ravnsight-detective' ); ?></p>
+						<?php
+						$ravndet_resolution = json_decode( (string) ( $ravndet_row->resolution ?? '' ), true );
+						$ravndet_fix_labels = array(
+							'updated'     => __( 'updated', 'ravnsight-detective' ),
+							'deactivated' => __( 'deactivated', 'ravnsight-detective' ),
+							'rolled_back' => __( 'rolled back', 'ravnsight-detective' ),
+							'config'      => __( 'config change', 'ravnsight-detective' ),
+							'other'       => __( 'other', 'ravnsight-detective' ),
+						);
+						?>
+						<p class="ravndet-resolved-note">
+							✓
+							<?php if ( is_array( $ravndet_resolution ) && ! empty( $ravndet_resolution['user'] ) ) : ?>
+								<?php
+								/* translators: 1: fix type label, 2: date. */
+								echo esc_html( sprintf( __( 'Resolved (%1$s) — marked %2$s.', 'ravnsight-detective' ), $ravndet_fix_labels[ $ravndet_resolution['fix_type'] ?? 'other' ] ?? '', wp_date( get_option( 'date_format' ), (int) ( $ravndet_resolution['at'] ?? $ravndet_row->resolved_detected ) ) ) );
+								?>
+							<?php else : ?>
+								<?php
+								/* translators: %s: date. */
+								echo esc_html( sprintf( __( 'Resolved — the error went silent (detected %s).', 'ravnsight-detective' ), wp_date( get_option( 'date_format' ), (int) $ravndet_row->resolved_detected ) ) );
+								?>
+							<?php endif; ?>
+						</p>
 					<?php endif; ?>
 					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
 					<?php if ( null !== $ravndet_corr ) : ?>

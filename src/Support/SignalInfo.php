@@ -68,6 +68,10 @@ final class SignalInfo {
 				return __( 'Failed background actions', 'ravnsight-detective' );
 			case 'error.as_backlog':
 				return __( 'Background queue backlog', 'ravnsight-detective' );
+			case 'isolation.session_started':
+				return __( 'Isolation test started', 'ravnsight-detective' );
+			case 'isolation.session_ended':
+				return __( 'Isolation test ended', 'ravnsight-detective' );
 			default:
 				return $type;
 		}
@@ -155,6 +159,12 @@ final class SignalInfo {
 				return array(
 					'what'   => __( 'An order reached the Failed status — almost always the payment step.', 'ravnsight-detective' ),
 					'action' => __( 'Check the payment gateway settings and its log (expired API keys and gateway downtime are the usual culprits).', 'ravnsight-detective' ),
+				);
+			case 'isolation.session_started':
+			case 'isolation.session_ended':
+				return array(
+					'what'   => __( 'Bookkeeping for an isolation test: who was disabled, when, and how the session ended. Visitors were never affected.', 'ravnsight-detective' ),
+					'action' => __( 'Nothing to do — this row exists so the history shows WHY an error suddenly stopped or a change appeared during a test window.', 'ravnsight-detective' ),
 				);
 			default:
 				if ( 0 === strpos( $type, 'change.' ) ) {

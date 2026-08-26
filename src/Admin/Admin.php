@@ -96,6 +96,8 @@ final class Admin {
 			'perf_detective'   => FeatureFlags::enabled( 'perf_detective' ),
 			'js_detective'     => FeatureFlags::enabled( 'js_detective' ),
 			'mail_detective'   => FeatureFlags::enabled( 'mail_detective' ),
+			'woo_detective'    => FeatureFlags::enabled( 'woo_detective' ),
+			'cron_detective'   => FeatureFlags::enabled( 'cron_detective' ),
 		);
 		$savequeries = (bool) get_option( 'ravndet_savequeries', false );
 		$site_info   = Health::site_info();
@@ -155,6 +157,7 @@ final class Admin {
 				'js_detective'     => isset( $_POST['module_js_detective'] ),
 				'mail_detective'   => isset( $_POST['module_mail_detective'] ),
 				'woo_detective'    => isset( $_POST['module_woo_detective'] ),
+				'cron_detective'   => isset( $_POST['module_cron_detective'] ),
 			)
 		);
 		update_option( 'ravndet_savequeries', isset( $_POST['savequeries'] ) ? 1 : 0, true );

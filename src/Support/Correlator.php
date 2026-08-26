@@ -44,7 +44,15 @@ final class Correlator {
 		$best              = null;
 		$best_rank         = 0;
 
+		$own_slugs = array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' );
+
 		foreach ( (array) $changes as $change ) {
+			// Never list the Detective itself as a suspect: it activates the
+			// moment monitoring begins, so it precedes every first-seen error.
+			$change_context = json_decode( (string) $change->context, true );
+			if ( ! empty( $change_context['self'] ) || in_array( (string) $change->component_id, $own_slugs, true ) ) {
+				continue;
+			}
 			$gap_minutes     = (int) round( ( (int) $row->first_seen - (int) $change->last_seen ) / 60 );
 			$component_match = '' !== $suspect_component && (string) $change->component_id === $suspect_component;
 
@@ -120,6 +128,10 @@ final class Correlator {
 		$listed = 0;
 		foreach ( (array) $changes as $change_row ) {
 			if ( $change_row === $change || $listed >= 2 ) {
+				continue;
+			}
+			$alt_context = json_decode( (string) $change_row->context, true );
+			if ( ! empty( $alt_context['self'] ) || in_array( (string) $change_row->component_id, $own_slugs, true ) ) {
 				continue;
 			}
 			$alt_gap = (int) round( ( (int) $row->first_seen - (int) $change_row->last_seen ) / 60 );

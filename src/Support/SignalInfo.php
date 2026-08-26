@@ -60,6 +60,14 @@ final class SignalInfo {
 				return __( 'JavaScript error', 'ravnsight-detective' );
 			case 'error.mail_failed':
 				return __( 'E-mail failed', 'ravnsight-detective' );
+			case 'error.wc_order_failed':
+				return __( 'WooCommerce order failed', 'ravnsight-detective' );
+			case 'error.cron_stalled':
+				return __( 'WP-cron stalled', 'ravnsight-detective' );
+			case 'error.as_failed':
+				return __( 'Failed background actions', 'ravnsight-detective' );
+			case 'error.as_backlog':
+				return __( 'Background queue backlog', 'ravnsight-detective' );
 			default:
 				return $type;
 		}
@@ -127,6 +135,26 @@ final class SignalInfo {
 				return array(
 					'what'   => __( 'JavaScript failed in a visitor\'s browser. Broken JS is invisible in server logs but very visible to visitors: dead buttons, forms that do nothing, carts that will not update.', 'ravnsight-detective' ),
 					'action' => __( 'The source file shows which plugin or theme shipped the broken script. Errors from browser extensions and external scripts are attributed as external — those you can usually ignore.', 'ravnsight-detective' ),
+				);
+			case 'error.cron_stalled':
+				return array(
+					'what'   => __( 'Scheduled background tasks are not running. Scheduled posts stay unpublished, order e-mails and renewals stop — while the site looks fine to visitors.', 'ravnsight-detective' ),
+					'action' => __( 'Visit the site once to kick cron. If it keeps happening, ask your host to run wp-cron.php via a real system cron and set DISABLE_WP_CRON.', 'ravnsight-detective' ),
+				);
+			case 'error.as_failed':
+				return array(
+					'what'   => __( 'Background actions (Action Scheduler) are failing. On WooCommerce shops these often carry order e-mails, webhooks and subscription renewals.', 'ravnsight-detective' ),
+					'action' => __( 'Open WooCommerce → Status → Scheduled actions, filter on Failed, and read the error of the latest failures.', 'ravnsight-detective' ),
+				);
+			case 'error.as_backlog':
+				return array(
+					'what'   => __( 'The background queue is not keeping up — pending actions are past due.', 'ravnsight-detective' ),
+					'action' => __( 'Usually a stalled or too-infrequent cron. Fix cron first; if the backlog persists, look for one action type flooding the queue.', 'ravnsight-detective' ),
+				);
+			case 'error.wc_order_failed':
+				return array(
+					'what'   => __( 'An order reached the Failed status — almost always the payment step.', 'ravnsight-detective' ),
+					'action' => __( 'Check the payment gateway settings and its log (expired API keys and gateway downtime are the usual culprits).', 'ravnsight-detective' ),
 				);
 			default:
 				if ( 0 === strpos( $type, 'change.' ) ) {

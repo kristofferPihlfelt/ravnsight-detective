@@ -52,7 +52,8 @@ final class Recorder {
 					'change.plugin_updated',
 					'info',
 					sprintf( 'Plugin updated: %s', $slug ),
-					array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) )
+					array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ),
+					$this->is_self( $slug ) ? array( 'self' => true ) : array()
 				);
 			}
 		} elseif ( 'theme' === $extra['type'] ) {
@@ -76,7 +77,7 @@ final class Recorder {
 	 */
 	public function on_plugin_activated( $basename ) {
 		$slug = strtok( (string) $basename, '/' );
-		SignalStore::record( 'change.plugin_activated', 'info', sprintf( 'Plugin activated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ) );
+		SignalStore::record( 'change.plugin_activated', 'info', sprintf( 'Plugin activated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ), $this->is_self( $slug ) ? array( 'self' => true ) : array() );
 	}
 
 	/**
@@ -86,7 +87,7 @@ final class Recorder {
 	 */
 	public function on_plugin_deactivated( $basename ) {
 		$slug = strtok( (string) $basename, '/' );
-		SignalStore::record( 'change.plugin_deactivated', 'info', sprintf( 'Plugin deactivated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ) );
+		SignalStore::record( 'change.plugin_deactivated', 'info', sprintf( 'Plugin deactivated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ), $this->is_self( $slug ) ? array( 'self' => true ) : array() );
 	}
 
 	/**
@@ -163,6 +164,20 @@ final class Recorder {
 		$all = get_plugins();
 
 		return (string) ( $all[ $basename ]['Version'] ?? '' );
+	}
+
+		/**
+	 * Whether a plugin slug is the Detective family itself (free, pro or
+	 * this white-label build). Own changes are recorded for the history,
+	 * but flagged so no correlator ever lists us as a suspect.
+	 *
+	 * @param string $slug Plugin directory slug.
+	 * @return bool
+	 */
+	private function is_self( $slug ) {
+		$own = array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' );
+
+		return in_array( (string) $slug, $own, true );
 	}
 
 	/**

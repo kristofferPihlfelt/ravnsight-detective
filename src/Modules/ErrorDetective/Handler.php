@@ -115,9 +115,15 @@ final class Handler {
 			$severity,
 			$message,
 			$component,
-			array(
-				'file' => $file,
-				'line' => $line,
+			array_filter(
+				array(
+					'file' => $file,
+					'line' => $line,
+					// Errors under WP-CLI (host cron, deploy scripts, wp eval)
+					// never hit a visitor — mark them so nobody chases a
+					// "works in the browser" ghost.
+					'cli'  => defined( 'WP_CLI' ) && WP_CLI ? true : null,
+				)
 			),
 			$uri
 		);

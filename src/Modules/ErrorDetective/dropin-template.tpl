@@ -39,7 +39,7 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 						'component_type' => $ctype,
 						'component_id'   => $cid,
 						'message'        => substr( $message, 0, 60000 ),
-						'context'        => json_encode( array( 'file' => $file, 'line' => $error['line'], 'early' => true ) ),
+						'context'        => json_encode( array_filter( array( 'file' => $file, 'line' => $error['line'], 'early' => true, 'cli' => defined( 'WP_CLI' ) && WP_CLI ? true : null ) ) ),
 						'count'          => 1,
 						'first_seen'     => time(),
 						'last_seen'      => time(),

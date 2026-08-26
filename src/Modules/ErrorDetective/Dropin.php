@@ -83,6 +83,8 @@ final class Dropin {
 
 		$template = (string) file_get_contents( __DIR__ . '/dropin-template.tpl' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local bundled template.
 
-		return str_replace( array( '{{MARKER}}', '{{TABLE}}' ), array( $marker, $table ), $template );
+		$self_slugs = "array( '" . implode( "', '", array_unique( array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' ) ) ) . "' )";
+
+		return str_replace( array( '{{MARKER}}', '{{TABLE}}', '{{SELF_SLUGS}}' ), array( $marker, $table, $self_slugs ), $template );
 	}
 }

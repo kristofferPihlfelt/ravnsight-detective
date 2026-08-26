@@ -28,6 +28,14 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 				$ctype       = $slug && ! str_starts_with( $slug, 'theme:' ) ? 'plugin' : ( $slug ? 'theme' : 'server' );
 				$cid         = str_replace( 'theme:', '', $slug );
 				// Same formula as SignalStore::fingerprint — the drop-in and the runtime handler must land on the SAME row.
+				// Own noise is a bug to fix, not a signal to show — but a
+				// SILENT self-breakage is worse, so it goes to the PHP error
+				// log where developers and hosts look.
+				if ( 'plugin' === $ctype && in_array( $cid, {{SELF_SLUGS}}, true ) ) {
+					error_log( 'Ravnsight Detective own fatal (not recorded as a signal): ' . $message );
+					parent::handle();
+					return;
+				}
 				$fingerprint = substr( hash( 'sha256', 'error.php_fatal|' . preg_replace( '/\\d+/', 'N', $message ) . '|' . $ctype . '|' . $cid ), 0, 40 );
 				$wpdb        = $GLOBALS['wpdb'];
 				$updated     = $wpdb->query( $wpdb->prepare( 'UPDATE {{TABLE}} SET count = count + 1, last_seen = %d, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s', time(), isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null, isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) $_SERVER['REQUEST_URI'], 0, 191 ) : null, $fingerprint ) );

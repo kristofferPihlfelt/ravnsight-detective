@@ -105,7 +105,11 @@ final class Handler {
 		list( $type, $severity ) = self::classify( $errno );
 		$component               = ComponentResolver::from_file( $file );
 		if ( 'plugin' === $component['type'] && in_array( $component['id'], array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' ), true ) ) {
-			return; // Own noise is a bug to fix, not a signal to show — free, pro and partner builds alike.
+			// Own noise is a bug to fix, not a signal to show — but never a
+			// SILENT one: it goes to the PHP error log (free/pro/partner alike).
+			error_log( 'Ravnsight Detective own error (not recorded as a signal): ' . $message . ' in ' . $file . ':' . $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- deliberate: our own defects must reach the host log.
+
+			return;
 		}
 
 		$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only diagnostic scope, redacted before storage.

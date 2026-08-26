@@ -29,6 +29,8 @@ use Ravnsight\Detective\Support\SignalInfo;
 					<span class="ravndet-signal-badge ravndet-badge-<?php echo esc_attr( $ravndet_row->severity ); ?>"><?php echo esc_html( SignalInfo::label( $ravndet_row->type ) ); ?></span>
 					<?php if ( null !== $ravndet_row->resolved_detected ) : ?>
 						<span class="ravndet-signal-badge ravndet-badge-resolved">✓ <?php esc_html_e( 'Resolved', 'ravnsight-detective' ); ?></span>
+					<?php elseif ( ! empty( $ravndet_row->culprit_confirmed ) ) : ?>
+						<span class="ravndet-signal-badge ravndet-badge-confirmed"><?php esc_html_e( 'Culprit confirmed', 'ravnsight-detective' ); ?></span>
 					<?php endif; ?>
 					<span class="ravndet-signal-msg"><?php echo esc_html( wp_html_excerpt( (string) $ravndet_row->message, 110, '…' ) ); ?></span>
 					<span class="ravndet-signal-meta">
@@ -99,6 +101,14 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<em><?php esc_html_e( 'Correlation, not proven cause.', 'ravnsight-detective' ); ?></em>
 						</div>
 					<?php endif; ?>
+					<?php if ( ! empty( $ravndet_row->culprit_confirmed ) && null === $ravndet_row->resolved_detected ) : ?>
+						<div class="ravndet-confirmed-note">
+							<strong><?php esc_html_e( 'Culprit confirmed by isolation test', 'ravnsight-detective' ); ?></strong>
+							<?php
+							/* translators: 1: component slug, 2: date. */
+							echo esc_html( sprintf( __( '%1$s was identified on %2$s — the error did not occur while it was disabled. It KEEPS affecting visitors until you update or deactivate the plugin for real. When you have fixed it, mark it resolved below.', 'ravnsight-detective' ), (string) $ravndet_row->component_id, wp_date( get_option( 'date_format' ), (int) $ravndet_row->culprit_confirmed ) ) );
+							?>
+						</div>
 					<?php if ( $ravndet_guide['what'] ) : ?>
 						<div class="ravndet-guidance">
 							<p><strong><?php esc_html_e( 'What this means', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['what'] ); ?></p>

@@ -40,6 +40,7 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 						'component_id'   => $cid,
 						'message'        => substr( $message, 0, 60000 ),
 						'context'        => json_encode( array_filter( array( 'file' => $file, 'line' => $error['line'], 'early' => true, 'cli' => defined( 'WP_CLI' ) && WP_CLI ? true : null ) ) ),
+						'scope'          => isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null,
 						'count'          => 1,
 						'first_seen'     => time(),
 						'last_seen'      => time(),

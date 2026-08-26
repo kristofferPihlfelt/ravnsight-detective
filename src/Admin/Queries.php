@@ -55,7 +55,7 @@ final class Queries {
 	 * @param string $severity   '' | info | warning | critical.
 	 * @return array
 	 */
-	public static function timeline( $type_group = '', $severity = '' ) {
+	public static function timeline( $type_group = '', $severity = '', $sort = 'recent' ) {
 		global $wpdb;
 		$table = Migrator::table( 'signals' );
 
@@ -63,8 +63,15 @@ final class Queries {
 		// Severity is validated against a fixed list; '%' matches all when unset.
 		$severity_like = in_array( $severity, array( 'info', 'warning', 'critical' ), true ) ? $severity : '%';
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin-only read.
-		return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE type LIKE %s AND severity LIKE %s ORDER BY last_seen DESC LIMIT 200', $table, $type_like, $severity_like ) );
+		// 'severity': unresolved criticals first, then warnings — for when you
+		// are hunting one specific problem. 'recent' stays the default: the
+		// timeline's whole point is "what changed right before".
+		$order = 'severity' === $sort
+			? "FIELD(severity, 'critical', 'warning', 'info'), (resolved_detected IS NULL) DESC, last_seen DESC"
+			: 'last_seen DESC';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, admin-only read; $order is built from a fixed whitelist above.
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE type LIKE %s AND severity LIKE %s ORDER BY {$order} LIMIT 200", $table, $type_like, $severity_like ) );
 		// phpcs:enable
 	}
 }

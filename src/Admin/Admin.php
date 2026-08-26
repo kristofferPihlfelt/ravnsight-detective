@@ -81,8 +81,9 @@ final class Admin {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only GET filters.
 		$filter_type     = isset( $_GET['signal_type'] ) ? sanitize_key( wp_unslash( $_GET['signal_type'] ) ) : '';
 		$filter_severity = isset( $_GET['severity'] ) ? sanitize_key( wp_unslash( $_GET['severity'] ) ) : '';
+		$filter_sort     = isset( $_GET['sort'] ) && 'severity' === $_GET['sort'] ? 'severity' : 'recent';
 		// phpcs:enable
-		$signals = Queries::timeline( $filter_type, $filter_severity );
+		$signals = Queries::timeline( $filter_type, $filter_severity, $filter_sort );
 		require RAVNDET_PATH . 'templates/admin-timeline.php';
 	}
 

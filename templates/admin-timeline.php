@@ -6,6 +6,7 @@
  * @var array  $signals         Rows.
  * @var string $filter_type     '' | error | change.
  * @var string $filter_severity '' | info | warning | critical.
+ * @var string $filter_sort     recent | severity.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -29,6 +30,10 @@ defined( 'ABSPATH' ) || exit;
 			<?php foreach ( array( 'critical', 'warning', 'info' ) as $ravndet_sev ) : ?>
 				<option value="<?php echo esc_attr( $ravndet_sev ); ?>" <?php selected( $filter_severity, $ravndet_sev ); ?>><?php echo esc_html( ucfirst( $ravndet_sev ) ); ?></option>
 			<?php endforeach; ?>
+		</select>
+		<select name="sort">
+			<option value="recent" <?php selected( $filter_sort, 'recent' ); ?>><?php esc_html_e( 'Most recent first', 'ravnsight-detective' ); ?></option>
+			<option value="severity" <?php selected( $filter_sort, 'severity' ); ?>><?php esc_html_e( 'Most severe first', 'ravnsight-detective' ); ?></option>
 		</select>
 		<button class="button"><?php esc_html_e( 'Filter', 'ravnsight-detective' ); ?></button>
 	</form>

@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Migrator {
 
-	const SCHEMA_VERSION = 3;
+	const SCHEMA_VERSION = 4;
 	const OPTION         = 'ravndet_db_version';
 
 	/**
@@ -58,6 +58,7 @@ final class Migrator {
 				component_id VARCHAR(255) NULL,
 				component_version VARCHAR(64) NULL,
 				scope VARCHAR(128) NULL,
+				scope_local VARCHAR(191) NULL,
 				message TEXT NULL,
 				context LONGTEXT NULL,
 				count INT UNSIGNED NOT NULL DEFAULT 1,

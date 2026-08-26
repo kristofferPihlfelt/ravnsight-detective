@@ -32,7 +32,11 @@ final class SignalStore {
 		global $wpdb;
 
 		$message = Redactor::text( (string) $message );
-		$scope   = Redactor::uri( (string) $scope );
+		// The redacted scope is what may LEAVE the site (sync, support copy).
+		// The raw URI stays in scope_local — the site owner's own data, the
+		// reproduction link — and is NEVER included in any transmission.
+		$scope_local = mb_substr( (string) $scope, 0, 191 );
+		$scope       = Redactor::uri( (string) $scope );
 		$context = Redactor::context( $context );
 		if ( null === $message || null === $context ) {
 			return false; // Redaction failed → drop, never store raw.
@@ -45,11 +49,12 @@ final class SignalStore {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, scope = COALESCE(scope, %s) WHERE fingerprint = %s',
+				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s',
 				$table,
 				$now,
 				$severity,
 				'' !== $scope ? $scope : null,
+				'' !== $scope_local ? $scope_local : null,
 				$fingerprint
 			)
 		);
@@ -70,6 +75,7 @@ final class SignalStore {
 				'component_id'      => isset( $component['id'] ) ? substr( (string) $component['id'], 0, 255 ) : null,
 				'component_version' => isset( $component['version'] ) ? substr( (string) $component['version'], 0, 64 ) : null,
 				'scope'             => '' !== $scope ? substr( $scope, 0, 128 ) : null,
+				'scope_local'       => '' !== $scope_local ? $scope_local : null,
 				'message'           => $message,
 				'context'           => wp_json_encode( $context ),
 				'count'             => 1,

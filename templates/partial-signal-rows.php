@@ -73,10 +73,16 @@ use Ravnsight\Detective\Support\SignalInfo;
 								<?php endif; ?>
 							</td>
 						</tr>
-						<?php if ( $ravndet_row->scope ) : ?>
+						<?php $ravndet_scope_show = ! empty( $ravndet_row->scope_local ) ? (string) $ravndet_row->scope_local : (string) $ravndet_row->scope; ?>
+						<?php if ( '' !== $ravndet_scope_show ) : ?>
 							<tr>
 								<th><?php esc_html_e( 'On request', 'ravnsight-detective' ); ?></th>
-								<td><code><?php echo esc_html( $ravndet_row->scope ); ?></code></td>
+								<td>
+									<a href="<?php echo esc_url( home_url( $ravndet_scope_show ) ); ?>" target="_blank" rel="noopener"><code><?php echo esc_html( $ravndet_scope_show ); ?></code></a>
+									<?php if ( ! empty( $ravndet_row->scope_local ) ) : ?>
+										<span class="description"><?php esc_html_e( '(full URL stays on this site — only a masked version is ever synced)', 'ravnsight-detective' ); ?></span>
+									<?php endif; ?>
+								</td>
 							</tr>
 						<?php endif; ?>
 					</table>

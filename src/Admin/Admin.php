@@ -22,6 +22,7 @@ final class Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_post_ravndet_save_settings', array( $this, 'save_settings' ) );
 		add_action( 'admin_post_ravndet_dropin', array( $this, 'dropin_action' ) );
+		add_action( 'admin_post_ravndet_resolve', array( $this, 'resolve_signal' ) );
 	}
 
 	/**
@@ -101,6 +102,7 @@ final class Admin {
 		);
 		$savequeries = (bool) get_option( 'ravndet_savequeries', false );
 		$site_info   = Health::site_info();
+		$share_outcomes      = (bool) get_option( 'ravndet_share_outcomes', false );
 		$delete_on_uninstall = (bool) get_option( 'ravndet_delete_data_on_uninstall', false );
 		$dropin_status       = \Ravnsight\Detective\Modules\ErrorDetective\Dropin::status();
 		require RAVNDET_PATH . 'templates/admin-settings.php';
@@ -135,6 +137,83 @@ final class Admin {
 	}
 
 	/**
+	 * Mark a signal as resolved, with the outcome (PRG). In Free the
+	 * anonymous outcome is shared with ravnsight.com ONLY when the user
+	 * opted in (globally or via the per-case checkbox). Pro syncs outcomes
+	 * through the paired cloud connection instead.
+	 */
+	public function resolve_signal() {
+		check_admin_referer( 'ravndet_admin' );
+		if ( ! current_user_can( ravndet_cap() ) ) {
+			wp_die( esc_html__( 'You are not allowed to do that.', 'ravnsight-detective' ) );
+		}
+
+		global $wpdb;
+		$signal_id = isset( $_POST['signal_id'] ) ? absint( wp_unslash( $_POST['signal_id'] ) ) : 0;
+		$fix_type  = isset( $_POST['fix_type'] ) ? sanitize_key( wp_unslash( $_POST['fix_type'] ) ) : 'other';
+		$outcome   = isset( $_POST['outcome'] ) && 'wrong_track' === $_POST['outcome'] ? 'wrong_track' : 'solved';
+		$actual    = isset( $_POST['actual_component'] ) ? sanitize_text_field( wp_unslash( $_POST['actual_component'] ) ) : '';
+		if ( ! in_array( $fix_type, array( 'deactivated', 'updated', 'rolled_back', 'config', 'other' ), true ) ) {
+			$fix_type = 'other';
+		}
+
+		$table = \Ravnsight\Detective\Core\Migrator::table( 'signals' );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $signal_id ) );
+		// phpcs:enable
+		if ( null === $row ) {
+			wp_safe_redirect( ravndet_url( 'timeline' ) );
+			exit;
+		}
+
+		$resolution = array(
+			'outcome'          => $outcome,
+			'fix_type'         => $fix_type,
+			'actual_component' => $actual,
+			'user'             => true,
+			'at'               => time(),
+		);
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->update(
+			$table,
+			array(
+				'resolved_detected' => time(),
+				'resolution'        => wp_json_encode( $resolution ),
+			),
+			array( 'id' => $signal_id ),
+			array( '%d', '%s' ),
+			array( '%d' )
+		);
+		// phpcs:enable
+
+		$share = get_option( 'ravndet_share_outcomes' ) || isset( $_POST['share_outcome'] );
+		if ( $share ) {
+			$suspect = \Ravnsight\Detective\Support\Correlator::analyze( $row );
+			wp_remote_post(
+				ravndet_api_base() . '/api/v1/telemetry/resolution',
+				array(
+					'timeout' => 8,
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode(
+						array(
+							'signal_type'      => (string) $row->type,
+							'severity'         => (string) $row->severity,
+							'confidence'       => null !== $suspect ? $suspect['confidence'] : null,
+							'suspect_component' => (string) $row->component_id,
+							'actual_component' => '' !== $actual ? $actual : null,
+							'fix_type'         => $fix_type,
+							'outcome'          => $outcome,
+						)
+					),
+				)
+			);
+		}
+
+		wp_safe_redirect( add_query_arg( 'ravndet_notice', 'resolved', ravndet_url( 'timeline' ) ) );
+		exit;
+	}
+
+	/**
 	 * Save settings (PRG).
 	 */
 	public function save_settings() {
@@ -161,6 +240,7 @@ final class Admin {
 			)
 		);
 		update_option( 'ravndet_savequeries', isset( $_POST['savequeries'] ) ? 1 : 0, true );
+		update_option( 'ravndet_share_outcomes', isset( $_POST['share_outcomes'] ) ? 1 : 0, false );
 
 		wp_safe_redirect( add_query_arg( 'ravndet_notice', 'saved', ravndet_url( 'settings' ) ) );
 		exit;

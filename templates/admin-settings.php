@@ -78,6 +78,16 @@ defined( 'ABSPATH' ) || exit;
 				</td>
 			</tr>
 			<tr>
+				<th scope="row"><?php esc_html_e( 'Improve diagnoses', 'ravnsight-detective' ); ?></th>
+				<td>
+					<?php  ?>
+					<label><input type="checkbox" name="share_outcomes" <?php checked( $share_outcomes ); ?>>
+					<?php esc_html_e( 'Share resolution outcomes anonymously with Ravnsight (error type, component and fix only — never your site identity, URLs or messages). Off by default; you can also choose per case.', 'ravnsight-detective' ); ?></label>
+					<?php  ?>
+					<?php  ?>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row"><?php esc_html_e( 'Deep query profiling', 'ravnsight-detective' ); ?></th>
 				<td>
 					<label><input type="checkbox" name="savequeries" <?php checked( $savequeries ); ?>>

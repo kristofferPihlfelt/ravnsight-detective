@@ -78,6 +78,39 @@ use Ravnsight\Detective\Support\SignalInfo;
 						<?php endif; ?>
 					</table>
 
+					<?php if ( null === $ravndet_row->resolved_detected && 0 !== strpos( (string) $ravndet_row->type, 'change.' ) ) : ?>
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ravndet-resolve">
+							<?php wp_nonce_field( 'ravndet_admin' ); ?>
+							<input type="hidden" name="action" value="ravndet_resolve" />
+							<input type="hidden" name="signal_id" value="<?php echo esc_attr( (string) $ravndet_row->id ); ?>" />
+							<strong><?php esc_html_e( 'Mark as resolved', 'ravnsight-detective' ); ?></strong>
+							<label>
+								<?php esc_html_e( 'What fixed it?', 'ravnsight-detective' ); ?>
+								<select name="fix_type">
+									<option value="updated"><?php esc_html_e( 'Updated', 'ravnsight-detective' ); ?></option>
+									<option value="deactivated"><?php esc_html_e( 'Deactivated', 'ravnsight-detective' ); ?></option>
+									<option value="rolled_back"><?php esc_html_e( 'Rolled back', 'ravnsight-detective' ); ?></option>
+									<option value="config"><?php esc_html_e( 'Config change', 'ravnsight-detective' ); ?></option>
+									<option value="other"><?php esc_html_e( 'Other', 'ravnsight-detective' ); ?></option>
+								</select>
+							</label>
+							<label>
+								<?php esc_html_e( 'Caused by', 'ravnsight-detective' ); ?>
+								<input type="text" name="actual_component" value="<?php echo esc_attr( (string) $ravndet_row->component_id ); ?>" />
+							</label>
+							<?php  ?>
+							<?php if ( ! get_option( 'ravndet_share_outcomes' ) ) : ?>
+								<label class="ravndet-share">
+									<input type="checkbox" name="share_outcome" value="1" />
+									<?php esc_html_e( 'Share this outcome anonymously with Ravnsight to improve diagnoses (error type, component and fix only — never your site identity)', 'ravnsight-detective' ); ?>
+								</label>
+							<?php endif; ?>
+							<?php  ?>
+							<button class="button"><?php esc_html_e( 'Save', 'ravnsight-detective' ); ?></button>
+						</form>
+					<?php elseif ( null !== $ravndet_row->resolved_detected ) : ?>
+						<p class="ravndet-resolved-note"><?php esc_html_e( 'Marked as resolved.', 'ravnsight-detective' ); ?></p>
+					<?php endif; ?>
 					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
 					<?php if ( null !== $ravndet_corr ) : ?>
 						<div class="ravndet-correlation ravndet-correlation-<?php echo esc_attr( $ravndet_corr['confidence'] ); ?>">

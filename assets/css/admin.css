@@ -45,3 +45,9 @@
 .ravndet-corr-minus { color: #b32d2e; }
 .ravndet-corr-alt { color: #646970; }
 .ravndet-correlation em { color: #646970; font-size: 12px; }
+
+/* Resolve form */
+.ravndet-resolve { margin: 10px 0; padding: 10px 12px; border-radius: 6px; background: #f6f7f7; border: 1px solid #dcdcde; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ravndet-resolve strong { margin-right: 4px; }
+.ravndet-resolve .ravndet-share { flex-basis: 100%; color: #646970; font-size: 12px; }
+.ravndet-resolved-note { color: #007017; font-weight: 600; }

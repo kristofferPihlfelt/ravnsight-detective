@@ -35,3 +35,20 @@ if ( ! function_exists( 'ravndet_url' ) ) {
 		return add_query_arg( $args, admin_url( 'admin.php?page=ravnsight-detective' . ( 'dashboard' === $page ? '' : '-' . $page ) ) );
 	}
 }
+
+if ( ! function_exists( 'ravndet_api_base' ) ) {
+	/**
+	 * Ravnsight platform base URL (constant beats filter beats default).
+	 * Used by the Pro connection AND by the free opt-in outcome telemetry.
+	 *
+	 * @return string
+	 */
+	function ravndet_api_base() {
+		if ( defined( 'RAVNDET_API_BASE' ) ) {
+			return untrailingslashit( (string) RAVNDET_API_BASE );
+		}
+
+		/** This filter is documented in src/Pro/Connection.php */
+		return untrailingslashit( (string) apply_filters( 'ravndet_api_base', 'https://ravnsight.com' ) );
+	}
+}

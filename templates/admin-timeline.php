@@ -12,6 +12,9 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="wrap ravndet-wrap">
 	<h1><?php esc_html_e( 'Timeline', 'ravnsight-detective' ); ?></h1>
+	<?php if ( isset( $_GET['ravndet_notice'] ) && 'resolved' === $_GET['ravndet_notice'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice code. ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Outcome saved — thanks, every answer improves the diagnoses.', 'ravnsight-detective' ); ?></p></div>
+	<?php endif; ?>
 	<p class="description"><?php esc_html_e( 'Errors and changes on one axis. When something breaks, look at what changed right before.', 'ravnsight-detective' ); ?></p>
 
 	<form method="get" class="ravndet-filters">

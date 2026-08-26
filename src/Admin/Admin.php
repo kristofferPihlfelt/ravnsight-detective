@@ -154,6 +154,7 @@ final class Admin {
 				'perf_detective'   => isset( $_POST['module_perf_detective'] ),
 				'js_detective'     => isset( $_POST['module_js_detective'] ),
 				'mail_detective'   => isset( $_POST['module_mail_detective'] ),
+				'woo_detective'    => isset( $_POST['module_woo_detective'] ),
 			)
 		);
 		update_option( 'ravndet_savequeries', isset( $_POST['savequeries'] ) ? 1 : 0, true );

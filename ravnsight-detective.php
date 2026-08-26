@@ -12,7 +12,7 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       ravnsight-detective
  *
- * Build: free (2026-08-25 19:55:08)
+ * Build: free (2026-08-26 05:29:40)
 
  * @package Ravnsight\Detective
  */

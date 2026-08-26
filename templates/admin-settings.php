@@ -68,6 +68,12 @@ defined( 'ABSPATH' ) || exit;
 						<label><input type="checkbox" name="module_mail_detective" <?php checked( $flags['mail_detective'] ); ?>>
 						<?php esc_html_e( 'Mail Detective — record failed outgoing e-mail with the real transport error', 'ravnsight-detective' ); ?></label>
 					</div>
+					<?php if ( \Ravnsight\Detective\Modules\WooDetective\Module::active() ) : ?>
+					<div>
+						<label><input type="checkbox" name="module_woo_detective" <?php checked( $flags['woo_detective'] ); ?>>
+						<?php esc_html_e( 'WooCommerce Detective — record failed orders with the payment gateway (order number only, never customer data)', 'ravnsight-detective' ); ?></label>
+					</div>
+					<?php endif; ?>
 					<p class="description"><?php esc_html_e( 'A disabled module records nothing; existing data stays until retention removes it.', 'ravnsight-detective' ); ?></p>
 				</td>
 			</tr>

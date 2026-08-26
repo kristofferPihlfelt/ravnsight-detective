@@ -81,6 +81,7 @@ use Ravnsight\Detective\Support\SignalInfo;
 						<?php endif; ?>
 					</table>
 
+					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
 					<?php if ( null === $ravndet_row->resolved_detected && 0 !== strpos( (string) $ravndet_row->type, 'change.' ) ) : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ravndet-resolve">
 							<?php wp_nonce_field( 'ravndet_admin' ); ?>
@@ -90,14 +91,20 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<?php $ravndet_suspects = null !== $ravndet_corr && ! empty( $ravndet_corr['suspects'] ) ? $ravndet_corr['suspects'] : array_filter( array( (string) $ravndet_row->component_id ) ); ?>
 							<label>
 								<?php esc_html_e( 'The cause was', 'ravnsight-detective' ); ?>
-								<select name="actual_component" onchange="this.form.querySelector('.ravndet-other-cause').style.display = this.value === '__other' ? '' : 'none';">
-									<?php foreach ( $ravndet_suspects as $ravndet_suspect ) : ?>
-										<option value="<?php echo esc_attr( $ravndet_suspect ); ?>"><?php echo esc_html( $ravndet_suspect ); ?></option>
-									<?php endforeach; ?>
-									<option value="__other"><?php esc_html_e( 'Something else / not sure', 'ravnsight-detective' ); ?></option>
-								</select>
+								<?php if ( array() === $ravndet_suspects ) : ?>
+									<input type="text" name="actual_component" placeholder="<?php esc_attr_e( 'component or reason', 'ravnsight-detective' ); ?>" />
+								<?php else : ?>
+									<select name="actual_component" onchange="this.form.querySelector('.ravndet-other-cause').style.display = this.value === '__other' ? '' : 'none';">
+										<?php foreach ( $ravndet_suspects as $ravndet_suspect ) : ?>
+											<option value="<?php echo esc_attr( $ravndet_suspect ); ?>"><?php echo esc_html( $ravndet_suspect ); ?></option>
+										<?php endforeach; ?>
+										<option value="__other"><?php esc_html_e( 'Something else / not sure', 'ravnsight-detective' ); ?></option>
+									</select>
+								<?php endif; ?>
 							</label>
-							<input type="text" name="actual_component_other" class="ravndet-other-cause" style="display:none" placeholder="<?php esc_attr_e( 'What was it?', 'ravnsight-detective' ); ?>" />
+							<?php if ( array() !== $ravndet_suspects ) : ?>
+								<input type="text" name="actual_component_other" class="ravndet-other-cause" style="display:none" placeholder="<?php esc_attr_e( 'What was it?', 'ravnsight-detective' ); ?>" />
+							<?php endif; ?>
 							<label>
 								<?php esc_html_e( 'and I fixed it by', 'ravnsight-detective' ); ?>
 								<select name="fix_type">
@@ -144,7 +151,6 @@ use Ravnsight\Detective\Support\SignalInfo;
 							<?php endif; ?>
 						</p>
 					<?php endif; ?>
-					<?php $ravndet_corr = \Ravnsight\Detective\Support\Correlator::analyze( $ravndet_row ); ?>
 					<?php if ( null !== $ravndet_corr ) : ?>
 						<div class="ravndet-correlation ravndet-correlation-<?php echo esc_attr( $ravndet_corr['confidence'] ); ?>">
 							<strong><?php esc_html_e( 'Likely cause', 'ravnsight-detective' ); ?> — <?php echo esc_html( \Ravnsight\Detective\Support\Correlator::confidence_label( $ravndet_corr['confidence'] ) ); ?></strong>

@@ -104,8 +104,8 @@ final class Handler {
 	private static function record( $errno, $message, $file, $line ) {
 		list( $type, $severity ) = self::classify( $errno );
 		$component               = ComponentResolver::from_file( $file );
-		if ( 'plugin' === $component['type'] && 'ravnsight-detective' === $component['id'] ) {
-			return; // Own noise is a bug to fix, not a signal to show.
+		if ( 'plugin' === $component['type'] && in_array( $component['id'], array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' ), true ) ) {
+			return; // Own noise is a bug to fix, not a signal to show — free, pro and partner builds alike.
 		}
 
 		$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only diagnostic scope, redacted before storage.

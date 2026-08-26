@@ -169,10 +169,10 @@ final class Correlator {
 	 */
 	private static function collect_suspects( $row, $change, $changes, $own_slugs ) {
 		$suspects = array();
-		if ( null !== $change && ! empty( $change->component_id ) ) {
+		if ( null !== $change && ! empty( $change->component_id ) && ! in_array( (string) $change->component_id, $own_slugs, true ) ) {
 			$suspects[] = (string) $change->component_id;
 		}
-		if ( ! empty( $row->component_id ) ) {
+		if ( ! empty( $row->component_id ) && ! in_array( (string) $row->component_id, $own_slugs, true ) ) {
 			$suspects[] = (string) $row->component_id;
 		}
 		foreach ( (array) $changes as $change_row ) {

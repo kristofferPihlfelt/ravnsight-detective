@@ -45,10 +45,11 @@ final class SignalStore {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL WHERE fingerprint = %s',
+				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, scope = COALESCE(scope, %s) WHERE fingerprint = %s',
 				$table,
 				$now,
 				$severity,
+				'' !== $scope ? $scope : null,
 				$fingerprint
 			)
 		);

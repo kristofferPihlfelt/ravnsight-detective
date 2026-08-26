@@ -30,7 +30,7 @@ class Ravnsight_Detective_Fatal_Handler extends WP_Fatal_Error_Handler {
 				// Same formula as SignalStore::fingerprint — the drop-in and the runtime handler must land on the SAME row.
 				$fingerprint = substr( hash( 'sha256', 'error.php_fatal|' . preg_replace( '/\\d+/', 'N', $message ) . '|' . $ctype . '|' . $cid ), 0, 40 );
 				$wpdb        = $GLOBALS['wpdb'];
-				$updated     = $wpdb->query( $wpdb->prepare( 'UPDATE {{TABLE}} SET count = count + 1, last_seen = %d WHERE fingerprint = %s', time(), $fingerprint ) );
+				$updated     = $wpdb->query( $wpdb->prepare( 'UPDATE {{TABLE}} SET count = count + 1, last_seen = %d, scope = COALESCE(scope, %s) WHERE fingerprint = %s', time(), isset( $_SERVER['REQUEST_URI'] ) ? substr( preg_replace( '/=([^&#]*)/', '=[redacted]', (string) $_SERVER['REQUEST_URI'] ), 0, 128 ) : null, $fingerprint ) );
 				if ( ! $updated ) {
 					$wpdb->insert( '{{TABLE}}', array(
 						'type'           => 'error.php_fatal',

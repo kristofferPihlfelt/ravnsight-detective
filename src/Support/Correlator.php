@@ -34,8 +34,9 @@ final class Correlator {
 		global $wpdb;
 		$table    = Migrator::table( 'signals' );
 		$since    = (int) $row->first_seen - self::WINDOW_HOURS * HOUR_IN_SECONDS;
+		$like     = $wpdb->esc_like( 'change.' ) . '%';
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin-only read.
-		$changes = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i WHERE type LIKE 'change.%%' AND last_seen >= %d ORDER BY last_seen DESC LIMIT 50", $table, $since ) );
+		$changes = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE type LIKE %s AND last_seen >= %d ORDER BY last_seen DESC LIMIT 50', $table, $like, $since ) );
 		// phpcs:enable
 
 		$suspect_component = (string) $row->component_id;
@@ -71,14 +72,14 @@ final class Correlator {
 			if ( '' === $suspect_component ) {
 				return null;
 			}
-			/* translators: %s: component slug. */
 			$lines[] = array(
 				'sign' => '+',
+			/* translators: %s: component slug. */
 				'text' => sprintf( __( 'The error names %s as the failing code.', 'ravnsight-detective' ), $suspect_component ),
 			);
-			/* translators: %d: number of hours. */
 			$lines[] = array(
 				'sign' => '-',
+			/* translators: %d: number of hours. */
 				'text' => sprintf( __( 'No recorded changes in the last %d hours.', 'ravnsight-detective' ), self::WINDOW_HOURS ),
 			);
 
@@ -93,23 +94,23 @@ final class Correlator {
 		$gap_label  = $best['gap'] >= 120 ? sprintf( '%d h', (int) floor( $best['gap'] / 60 ) ) : sprintf( '%d min', max( (int) abs( $best['gap'] ), 1 ) );
 
 		if ( $best['match'] ) {
-			/* translators: %s: component slug. */
 			$lines[] = array(
 				'sign' => '+',
+			/* translators: %s: component slug. */
 				'text' => sprintf( __( 'The error names %s as the failing code.', 'ravnsight-detective' ), $suspect_component ),
 			);
 		}
 		if ( $best['gap'] >= 0 ) {
-			/* translators: 1: change description, 2: component, 3: time gap. */
 			$lines[] = array(
 				'sign' => '+',
+			/* translators: 1: change description, 2: component, 3: time gap. */
 				'text' => sprintf( __( '%1$s (%2$s) %3$s before the error first appeared.', 'ravnsight-detective' ), SignalInfo::label( (string) $change->type ), (string) $change->component_id, $gap_label ),
 			);
 		} else {
 			$confidence = 'low';
-			/* translators: 1: change description, 2: component, 3: time gap. */
 			$lines[] = array(
 				'sign' => '-',
+			/* translators: 1: change description, 2: component, 3: time gap. */
 				'text' => sprintf( __( '%1$s (%2$s) happened %3$s AFTER the error appeared — speaks against a link.', 'ravnsight-detective' ), SignalInfo::label( (string) $change->type ), (string) $change->component_id, $gap_label ),
 			);
 		}
@@ -125,9 +126,9 @@ final class Correlator {
 				continue;
 			}
 			$alt_label = $alt_gap >= 120 ? sprintf( '%d h', (int) floor( $alt_gap / 60 ) ) : sprintf( '%d min', max( $alt_gap, 1 ) );
-			/* translators: 1: change description, 2: component, 3: time gap. */
 			$lines[] = array(
 				'sign' => '?',
+			/* translators: 1: change description, 2: component, 3: time gap. */
 				'text' => sprintf( __( 'Also %1$s (%2$s) %3$s before — alternative suspect.', 'ravnsight-detective' ), SignalInfo::label( (string) $change_row->type ), (string) $change_row->component_id, $alt_label ),
 			);
 			++$listed;

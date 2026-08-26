@@ -35,5 +35,10 @@ final class Module implements ModuleInterface {
 		add_action( '_core_updated_successfully', array( $recorder, 'on_core_updated' ) );
 		add_action( 'updated_option', array( $recorder, 'on_option_updated' ), 10, 3 );
 		add_action( 'ravndet_daily', array( Snapshot::class, 'take' ) );
+
+		// Environment drift: PHP/database/WordPress version changed under
+		// our feet (host-side upgrades never fire WP hooks). One autoloaded
+		// option compare per request; signals only on actual change.
+		add_action( 'init', array( $recorder, 'check_environment' ), 5 );
 	}
 }

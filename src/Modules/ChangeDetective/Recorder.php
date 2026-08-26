@@ -164,4 +164,80 @@ final class Recorder {
 
 		return (string) ( $all[ $basename ]['Version'] ?? '' );
 	}
+
+	/**
+	 * Detect environment drift: PHP, database server or WordPress version
+	 * changed since last seen. Host-side upgrades (new PHP in the control
+	 * panel, MySQL→MariaDB migration) fire no WordPress hook — this compare
+	 * is the only way to catch them, and they are prime correlation
+	 * material ("plugin X fatal 10 min after PHP 8.1 → 8.3").
+	 */
+	public function check_environment() {
+		global $wp_version, $wpdb;
+
+		$current = array(
+			'php' => PHP_VERSION,
+			'db'  => (string) $wpdb->db_server_info(),
+			'wp'  => (string) $wp_version,
+		);
+
+		$known = get_option( 'ravndet_environment' );
+		if ( ! is_array( $known ) ) {
+			update_option( 'ravndet_environment', $current, true );
+
+			return;
+		}
+		if ( $known === $current ) {
+			return;
+		}
+
+		if ( ( $known['php'] ?? '' ) !== $current['php'] ) {
+			SignalStore::record(
+				'change.php_version',
+				'info',
+				sprintf( 'PHP version changed: %s -> %s', $known['php'] ?? '?', $current['php'] ),
+				array(
+					'type' => 'server',
+					'id'   => 'php',
+				),
+				array(
+					'from' => (string) ( $known['php'] ?? '' ),
+					'to'   => $current['php'],
+				)
+			);
+		}
+		if ( ( $known['db'] ?? '' ) !== $current['db'] ) {
+			SignalStore::record(
+				'change.db_version',
+				'info',
+				sprintf( 'Database server changed: %s -> %s', $known['db'] ?? '?', $current['db'] ),
+				array(
+					'type' => 'server',
+					'id'   => 'database',
+				),
+				array(
+					'from' => (string) ( $known['db'] ?? '' ),
+					'to'   => $current['db'],
+				)
+			);
+		}
+		if ( ( $known['wp'] ?? '' ) !== $current['wp'] ) {
+			SignalStore::record(
+				'change.core_updated',
+				'info',
+				sprintf( 'WordPress version changed: %s -> %s', $known['wp'] ?? '?', $current['wp'] ),
+				array(
+					'type'    => 'core',
+					'id'      => 'wordpress',
+					'version' => $current['wp'],
+				),
+				array(
+					'from' => (string) ( $known['wp'] ?? '' ),
+					'to'   => $current['wp'],
+				)
+			);
+		}
+
+		update_option( 'ravndet_environment', $current, true );
+	}
 }

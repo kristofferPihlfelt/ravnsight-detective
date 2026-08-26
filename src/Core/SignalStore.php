@@ -49,7 +49,7 @@ final class SignalStore {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, the single upsert write path.
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s',
+				'UPDATE %i SET count = count + 1, last_seen = %d, severity = %s, resolved_detected = NULL, pending_fix = NULL, scope = COALESCE(scope, %s), scope_local = COALESCE(scope_local, %s) WHERE fingerprint = %s',
 				$table,
 				$now,
 				$severity,
@@ -106,6 +106,60 @@ final class SignalStore {
 	 * Prune rows older than the retention window.
 	 */
 	/**
+	 * A component with open errors was just fixed (updated/deactivated…) —
+	 * the plugin SAW it happen, so nobody has to fill in a form.
+	 *
+	 * - Culprit already CONFIRMED by an isolation test → resolve NOW with
+	 *   full fidelity (cause proven, fix observed, version known).
+	 * - Merely suspected → record a PENDING fix on the row; the silence
+	 *   scan later resolves WITH this data if the error stays gone, and a
+	 *   recurrence clears it (the fix did not help).
+	 *
+	 * @param string $slug     Component slug that changed.
+	 * @param string $fix_type updated|deactivated|rolled_back|config|other.
+	 * @param string $version  New version ('' when unknown/gone).
+	 */
+	public static function note_component_fix( $slug, $fix_type, $version = '' ) {
+		global $wpdb;
+
+		if ( '' === $slug ) {
+			return;
+		}
+		$table = Migrator::table( 'signals' );
+		$now   = time();
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, single write path.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, culprit_confirmed FROM %i WHERE component_id = %s AND type LIKE %s AND resolved_detected IS NULL", $table, $slug, $wpdb->esc_like( 'error.' ) . '%' ) );
+		foreach ( (array) $rows as $row ) {
+			$payload = array(
+				'outcome'          => 'solved',
+				'fix_type'         => $fix_type,
+				'actual_component' => $slug,
+				'actual_version'   => $version,
+				'auto_fix'         => true,
+				'isolation'        => ! empty( $row->culprit_confirmed ),
+				'at'               => $now,
+			);
+			if ( ! empty( $row->culprit_confirmed ) ) {
+				// Proven culprit + observed fix = resolve immediately.
+				$wpdb->update(
+					$table,
+					array(
+						'resolved_detected' => $now,
+						'resolution'        => wp_json_encode( $payload ),
+					),
+					array( 'id' => (int) $row->id ),
+					array( '%d', '%s' ),
+					array( '%d' )
+				);
+			} else {
+				$wpdb->update( $table, array( 'pending_fix' => wp_json_encode( $payload ) ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
+			}
+		}
+		// phpcs:enable
+	}
+
+	/**
 	 * Silence scan (daily): an error that has stopped occurring is a
 	 * RESOLUTION — and the real stop time is the last occurrence, which is
 	 * what the reverse correlator needs. Threshold: 24 h, or 3× the
@@ -117,7 +171,7 @@ final class SignalStore {
 
 		$table = Migrator::table( 'signals' );
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table housekeeping.
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, fingerprint, count, first_seen, last_seen FROM %i WHERE resolved_detected IS NULL AND ( type LIKE %s OR type LIKE %s ) AND last_seen < %d", $table, $wpdb->esc_like( 'error.' ) . '%', $wpdb->esc_like( 'perf.' ) . '%', time() - DAY_IN_SECONDS ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, fingerprint, count, first_seen, last_seen, pending_fix FROM %i WHERE resolved_detected IS NULL AND ( type LIKE %s OR type LIKE %s ) AND last_seen < %d", $table, $wpdb->esc_like( 'error.' ) . '%', $wpdb->esc_like( 'perf.' ) . '%', time() - DAY_IN_SECONDS ) );
 
 		foreach ( (array) $rows as $row ) {
 			$avg_interval = $row->count > 1 ? ( (int) $row->last_seen - (int) $row->first_seen ) / ( (int) $row->count - 1 ) : 0;
@@ -125,7 +179,16 @@ final class SignalStore {
 			if ( time() - (int) $row->last_seen < $threshold ) {
 				continue;
 			}
-			$wpdb->update( $table, array( 'resolved_detected' => time() ), array( 'id' => (int) $row->id ), array( '%d' ), array( '%d' ) );
+			$update  = array( 'resolved_detected' => time() );
+			$formats = array( '%d' );
+			if ( ! empty( $row->pending_fix ) ) {
+				// The fix that preceded the silence — captured when it
+				// happened, promoted to the resolution now that the
+				// silence proves it worked.
+				$update['resolution'] = $row->pending_fix;
+				$formats[]            = '%s';
+			}
+			$wpdb->update( $table, $update, array( 'id' => (int) $row->id ), $formats, array( '%d' ) );
 		}
 		// phpcs:enable
 	}

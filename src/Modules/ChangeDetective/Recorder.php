@@ -48,22 +48,28 @@ final class Recorder {
 		if ( 'plugin' === $extra['type'] ) {
 			foreach ( (array) ( $extra['plugins'] ?? array() ) as $basename ) {
 				$slug = strtok( (string) $basename, '/' );
+				$new_version = $this->plugin_version( (string) $basename );
 				SignalStore::record(
 					'change.plugin_updated',
 					'info',
 					sprintf( 'Plugin updated: %s', $slug ),
-					array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ),
+					array( 'type' => 'plugin', 'id' => $slug, 'version' => $new_version ),
 					$this->is_self( $slug ) ? array( 'self' => true ) : array()
 				);
+				if ( ! $this->is_self( $slug ) ) {
+					SignalStore::note_component_fix( $slug, 'updated', $new_version );
+				}
 			}
 		} elseif ( 'theme' === $extra['type'] ) {
 			foreach ( (array) ( $extra['themes'] ?? array() ) as $slug ) {
+				$theme_version = (string) wp_get_theme( (string) $slug )->get( 'Version' );
 				SignalStore::record(
 					'change.theme_updated',
 					'info',
 					sprintf( 'Theme updated: %s', $slug ),
-					array( 'type' => 'theme', 'id' => (string) $slug, 'version' => (string) wp_get_theme( (string) $slug )->get( 'Version' ) )
+					array( 'type' => 'theme', 'id' => (string) $slug, 'version' => $theme_version )
 				);
+				SignalStore::note_component_fix( (string) $slug, 'updated', $theme_version );
 			}
 		} elseif ( 'core' === $extra['type'] ) {
 			$this->on_core_updated( get_bloginfo( 'version' ) );
@@ -80,6 +86,10 @@ final class Recorder {
 		SignalStore::record( 'change.plugin_activated', 'info', sprintf( 'Plugin activated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ), $this->is_self( $slug ) ? array( 'self' => true ) : array() );
 	}
 
+	// (Re)activation is deliberately NOT a fix event: activating a plugin
+	// does not repair its errors.
+
+
 	/**
 	 * Plugin deactivated.
 	 *
@@ -88,6 +98,9 @@ final class Recorder {
 	public function on_plugin_deactivated( $basename ) {
 		$slug = strtok( (string) $basename, '/' );
 		SignalStore::record( 'change.plugin_deactivated', 'info', sprintf( 'Plugin deactivated: %s', $slug ), array( 'type' => 'plugin', 'id' => $slug, 'version' => $this->plugin_version( (string) $basename ) ), $this->is_self( $slug ) ? array( 'self' => true ) : array() );
+		if ( ! $this->is_self( $slug ) ) {
+			SignalStore::note_component_fix( $slug, 'deactivated' );
+		}
 	}
 
 	/**

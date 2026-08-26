@@ -109,6 +109,7 @@ use Ravnsight\Detective\Support\SignalInfo;
 							echo esc_html( sprintf( __( '%1$s was identified on %2$s — the error did not occur while it was disabled. It KEEPS affecting visitors until you update or deactivate the plugin for real. When you have fixed it, mark it resolved below.', 'ravnsight-detective' ), (string) $ravndet_row->component_id, wp_date( get_option( 'date_format' ), (int) $ravndet_row->culprit_confirmed ) ) );
 							?>
 						</div>
+					<?php endif; ?>
 					<?php if ( $ravndet_guide['what'] ) : ?>
 						<div class="ravndet-guidance">
 							<p><strong><?php esc_html_e( 'What this means', 'ravnsight-detective' ); ?></strong><br><?php echo esc_html( $ravndet_guide['what'] ); ?></p>

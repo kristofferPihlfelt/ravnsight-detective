@@ -86,6 +86,119 @@ final class Health {
 	 *
 	 * @return string
 	 */
+	/**
+	 * Compact structured environment summary for the platform (Pro
+	 * heartbeat). Everything here is setup data, not content: versions,
+	 * limits, theme, builder, update needs. Lists are capped — this is an
+	 * overview, never an audit.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function environment_summary() {
+		global $wpdb;
+
+		$health = self::overview();
+		$theme  = wp_get_theme();
+		$parent = $theme->parent();
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$active = (array) get_option( 'active_plugins', array() );
+		$all    = get_plugins();
+
+		// Plugins not updated in a long time — measured locally: the main
+		// file's mtime is when THIS site last installed/updated it.
+		$stale = array();
+		foreach ( $active as $basename ) {
+			if ( ! isset( $all[ $basename ] ) ) {
+				continue;
+			}
+			$file = WP_PLUGIN_DIR . '/' . $basename;
+			if ( ! file_exists( $file ) ) {
+				continue;
+			}
+			$months = (int) floor( ( time() - (int) filemtime( $file ) ) / ( 30 * DAY_IN_SECONDS ) );
+			if ( $months >= 12 ) {
+				$stale[] = array(
+					'name'    => (string) $all[ $basename ]['Name'],
+					'version' => (string) $all[ $basename ]['Version'],
+					'months'  => $months,
+				);
+			}
+		}
+		usort( $stale, static fn( $a, $b ) => $b['months'] <=> $a['months'] );
+
+		// Page-builder detection: setups with builders fail differently.
+		$builder  = '';
+		$builders = array(
+			'elementor/elementor.php'          => 'Elementor',
+			'js_composer/js_composer.php'      => 'WPBakery',
+			'beaver-builder-lite-version/fl-builder.php' => 'Beaver Builder',
+			'oxygen/functions.php'             => 'Oxygen',
+			'fusion-builder/fusion-builder.php' => 'Avada Builder',
+			'breakdance/plugin.php'            => 'Breakdance',
+		);
+		foreach ( $builders as $basename => $name ) {
+			if ( in_array( $basename, $active, true ) ) {
+				$builder = $name;
+				break;
+			}
+		}
+		if ( '' === $builder && in_array( strtolower( (string) $theme->get_template() ), array( 'divi', 'bricks' ), true ) ) {
+			$builder = ucfirst( strtolower( (string) $theme->get_template() ) );
+		}
+
+		$updates = array();
+		foreach ( array_slice( $health['plugin_updates'], 0, 15 ) as $up ) {
+			$updates[] = array(
+				'name'       => (string) $up['name'],
+				'current'    => (string) $up['current'],
+				'new'        => (string) $up['new'],
+				'no_package' => ! empty( $up['no_package'] ),
+			);
+		}
+		$theme_updates = array();
+		foreach ( array_slice( $health['theme_updates'], 0, 5 ) as $up ) {
+			$theme_updates[] = array(
+				'name'    => (string) $up['name'],
+				'current' => (string) $up['current'],
+				'new'     => (string) $up['new'],
+			);
+		}
+
+		return array(
+			'wp'            => array(
+				'version' => (string) $health['wp_version'],
+				'update'  => (string) ( $health['core_update'] ?? '' ),
+			),
+			'php'           => array(
+				'version' => PHP_VERSION,
+				'old'     => (bool) $health['php_old'],
+				'memory'  => (string) $health['server']['memory_limit'],
+				'upload'  => (string) $health['server']['upload_max'],
+			),
+			'server'        => array(
+				'disk_free_gb' => $health['server']['disk_free_gb'],
+				'disk_low'     => (bool) $health['server']['disk_low'],
+				'db'           => (string) $wpdb->db_server_info(),
+			),
+			'theme'         => array(
+				'name'    => (string) $theme->get( 'Name' ),
+				'version' => (string) $theme->get( 'Version' ),
+				'parent'  => $parent ? (string) $parent->get( 'Name' ) : '',
+			),
+			'builder'       => $builder,
+			'plugins'       => array(
+				'total'   => count( $all ),
+				'active'  => count( $active ),
+				'updates' => $updates,
+				'stale'   => array_slice( $stale, 0, 5 ),
+			),
+			'theme_updates' => $theme_updates,
+		);
+	}
+
 	public static function site_info() {
 		global $wpdb;
 

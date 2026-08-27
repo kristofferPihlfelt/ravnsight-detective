@@ -103,6 +103,28 @@ final class StackDetector {
 	}
 
 	/**
+	 * The editing experience the site uses: a page builder if one is
+	 * active, otherwise Classic Editor when that plugin is on, otherwise
+	 * Gutenberg (the block editor, default since WP 5.0).
+	 *
+	 * @return string
+	 */
+	public static function editor() {
+		$stack = self::detect();
+		if ( '' !== $stack['builder'] ) {
+			return $stack['builder'];
+		}
+		$active = (array) get_option( 'active_plugins', array() );
+		foreach ( array( 'classic-editor/classic-editor.php', 'disable-gutenberg/disable-gutenberg.php' ) as $basename ) {
+			if ( in_array( $basename, $active, true ) ) {
+				return 'Classic Editor';
+			}
+		}
+
+		return 'Gutenberg';
+	}
+
+	/**
 	 * The category a single plugin basename belongs to, or '' — used to
 	 * tag rows in the support block.
 	 *

@@ -177,6 +177,7 @@ final class Health {
 
 		$stack   = \Ravnsight\Detective\Support\StackDetector::detect();
 		$builder = $stack['builder'];
+		$editor  = \Ravnsight\Detective\Support\StackDetector::editor();
 
 		$updates = array();
 		foreach ( array_slice( $health['plugin_updates'], 0, 15 ) as $up ) {
@@ -218,6 +219,7 @@ final class Health {
 				'parent'  => $parent ? (string) $parent->get( 'Name' ) : '',
 			),
 			'builder'       => $builder,
+			'editor'        => $editor,
 			'stack'         => array(
 				'cache'    => $stack['cache'],
 				'security' => $stack['security'],

@@ -22,6 +22,7 @@ final class Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_post_ravndet_save_settings', array( $this, 'save_settings' ) );
 		add_action( 'admin_post_ravndet_dropin', array( $this, 'dropin_action' ) );
+		add_action( 'admin_init', array( '\\Ravnsight\\Detective\\Admin\\Health', 'capture_runtime' ) );
 		add_action( 'admin_post_ravndet_resolve', array( $this, 'resolve_signal' ) );
 	}
 

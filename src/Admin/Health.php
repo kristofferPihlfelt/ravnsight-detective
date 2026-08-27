@@ -94,12 +94,58 @@ final class Health {
 	 *
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * Capture the volatile ini values that differ between web (FPM) and
+	 * CLI — memory, execution time, upload limits, SAPI, HTTPS. Called on
+	 * admin_init (always a real web request), stored for the sync which
+	 * runs under CLI/cron where these values are wrong (unlimited).
+	 */
+	public static function capture_runtime() {
+		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+			return;
+		}
+		update_option(
+			'ravndet_runtime',
+			array(
+				'memory'   => (string) ini_get( 'memory_limit' ),
+				'exec'     => (int) ini_get( 'max_execution_time' ),
+				'upload'   => (string) ini_get( 'upload_max_filesize' ),
+				'post'     => (string) ini_get( 'post_max_size' ),
+				'sapi'     => PHP_SAPI,
+				'https'    => is_ssl(),
+				'display'  => (bool) ini_get( 'display_errors' ),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Web-context runtime values (from the last admin request), falling
+	 * back to the live values when never captured.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function runtime() {
+		$saved = get_option( 'ravndet_runtime' );
+
+		return is_array( $saved ) ? $saved : array(
+			'memory'  => (string) ini_get( 'memory_limit' ),
+			'exec'    => (int) ini_get( 'max_execution_time' ),
+			'upload'  => (string) ini_get( 'upload_max_filesize' ),
+			'post'    => (string) ini_get( 'post_max_size' ),
+			'sapi'    => PHP_SAPI,
+			'https'   => is_ssl(),
+			'display' => (bool) ini_get( 'display_errors' ),
+		);
+	}
+
 	public static function environment_summary() {
 		global $wpdb;
 
-		$health = self::overview();
-		$theme  = wp_get_theme();
-		$parent = $theme->parent();
+		$health  = self::overview();
+		$runtime = self::runtime();
+		$theme   = wp_get_theme();
+		$parent  = $theme->parent();
 
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -158,8 +204,8 @@ final class Health {
 			'php'           => array(
 				'version' => PHP_VERSION,
 				'old'     => (bool) $health['php_old'],
-				'memory'  => (string) $health['server']['memory_limit'],
-				'upload'  => (string) $health['server']['upload_max'],
+				'memory'  => (string) $runtime['memory'],
+				'upload'  => (string) $runtime['upload'],
 			),
 			'server'        => array(
 				'disk_free_gb' => $health['server']['disk_free_gb'],
@@ -181,13 +227,13 @@ final class Health {
 			'debug'         => array(
 				'wp_debug'        => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'debug_display'   => defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY,
-				'display_errors'  => (bool) ini_get( 'display_errors' ),
+				'display_errors'  => (bool) $runtime['display'],
 				'disable_wp_cron' => defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
 			),
 			'exec'          => array(
-				'max_execution' => (int) ini_get( 'max_execution_time' ),
+				'max_execution' => (int) $runtime['exec'],
 				'object_cache'  => wp_using_ext_object_cache() ? 'external' : 'default',
-				'https'         => is_ssl(),
+				'https'         => (bool) $runtime['https'],
 			),
 			'plugins'       => array(
 				'total'   => count( $all ),

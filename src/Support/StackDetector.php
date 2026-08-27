@@ -70,6 +70,15 @@ final class StackDetector {
 				'backupbuddy/backupbuddy.php'      => 'BackupBuddy',
 				'wpvivid-backuprestore/wpvivid-backuprestore.php' => 'WPvivid',
 			),
+			'i18n'     => array(
+				'sitepress-multilingual-cms/sitepress.php' => 'WPML',
+				'polylang/polylang.php'                    => 'Polylang',
+				'polylang-pro/polylang.php'                => 'Polylang Pro',
+				'translatepress-multilingual/index.php'    => 'TranslatePress',
+				'weglot/weglot.php'                        => 'Weglot',
+				'gtranslate/gtranslate.php'                => 'GTranslate',
+				'translang/translang.php'                  => 'TranslatePress',
+			),
 		);
 	}
 

@@ -114,6 +114,7 @@ final class Health {
 				'sapi'     => PHP_SAPI,
 				'https'    => is_ssl(),
 				'display'  => (bool) ini_get( 'display_errors' ),
+				'server'   => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '',
 			),
 			false
 		);
@@ -136,6 +137,7 @@ final class Health {
 			'sapi'    => PHP_SAPI,
 			'https'   => is_ssl(),
 			'display' => (bool) ini_get( 'display_errors' ),
+			'server'  => isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '',
 		);
 	}
 
@@ -237,6 +239,7 @@ final class Health {
 				'max_execution' => (int) $runtime['exec'],
 				'object_cache'  => wp_using_ext_object_cache() ? 'external' : 'default',
 				'https'         => (bool) $runtime['https'],
+				'web_server'    => (string) ( $runtime['server'] ?? '' ),
 			),
 			'plugins'       => array(
 				'total'   => count( $all ),

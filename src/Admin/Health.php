@@ -194,9 +194,35 @@ final class Health {
 				'active'  => count( $active ),
 				'updates' => $updates,
 				'stale'   => array_slice( $stale, 0, 5 ),
+				'list'    => self::active_plugin_list( $active, $all ),
 			),
 			'theme_updates' => $theme_updates,
 		);
+	}
+
+	/**
+	 * Compact active-plugin list for the platform: name, version and role
+	 * tag, capped so the payload stays small.
+	 *
+	 * @param array<int, string>            $active Active basenames.
+	 * @param array<string, array<string>>  $all    get_plugins() output.
+	 * @return array<int, array{name: string, version: string, cat: string}>
+	 */
+	private static function active_plugin_list( array $active, array $all ) {
+		$own  = array( dirname( RAVNDET_BASENAME ), RAVNDET_SLUG, RAVNDET_SLUG . '-pro' );
+		$list = array();
+		foreach ( $active as $basename ) {
+			if ( ! isset( $all[ $basename ] ) || count( $list ) >= 60 ) {
+				continue;
+			}
+			$list[] = array(
+				'name'    => mb_substr( (string) $all[ $basename ]['Name'], 0, 60 ),
+				'version' => (string) ( $all[ $basename ]['Version'] ?? '' ),
+				'cat'     => in_array( strtok( (string) $basename, '/' ), $own, true ) ? 'ravnsight' : \Ravnsight\Detective\Support\StackDetector::category_of( (string) $basename ),
+			);
+		}
+
+		return $list;
 	}
 
 	public static function site_info() {

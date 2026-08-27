@@ -103,6 +103,66 @@ final class StackDetector {
 	}
 
 	/**
+	 * Commerce summary: is this a WooCommerce shop, which version, and
+	 * which payment gateways are ENABLED (Klarna, Stripe, Swish, Svea,
+	 * PayPal, invoice…). A shop fails differently at the checkout, and the
+	 * gateway is the usual suspect — so it belongs up front, not buried in
+	 * the plugin list.
+	 *
+	 * @return array{shop: bool, version?: string, gateways?: array<int, string>}
+	 */
+	public static function commerce() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array( 'shop' => false );
+		}
+		// Read enabled gateways from their settings options — reliable in
+		// ANY context (WC does not load gateway objects under CLI/cron).
+		// Known ids → default name; the merchant's own title wins.
+		$known = array(
+			'bacs'                    => 'Banköverföring',
+			'cheque'                  => 'Check',
+			'cod'                     => 'Postförskott',
+			'paypal'                  => 'PayPal',
+			'ppcp-gateway'            => 'PayPal',
+			'ppec_paypal'             => 'PayPal',
+			'stripe'                  => 'Stripe',
+			'stripe_cc'               => 'Stripe',
+			'klarna_payments'         => 'Klarna',
+			'kco'                     => 'Klarna Checkout',
+			'klarna_checkout'         => 'Klarna Checkout',
+			'swish'                   => 'Swish',
+			'payson'                  => 'Payson',
+			'payson2'                 => 'Payson',
+			'sveawebpay_invoice'      => 'Svea',
+			'sveawebpay_part'         => 'Svea',
+			'svea_checkout'           => 'Svea Checkout',
+			'nets_easy'               => 'Nets Easy',
+			'dibs_easy'               => 'Nets Easy',
+			'epay_dk'                 => 'ePay',
+			'square_credit_card'      => 'Square',
+			'amazon_payments_advanced' => 'Amazon Pay',
+			'woo-mercado-pago-basic'  => 'Mercado Pago',
+			'mollie_wc_gateway_creditcard' => 'Mollie',
+			'qliro_one'               => 'Qliro',
+			'vipps'                   => 'Vipps',
+		);
+		$gateways = array();
+		foreach ( $known as $id => $name ) {
+			$settings = get_option( 'woocommerce_' . $id . '_settings' );
+			if ( is_array( $settings ) && isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) {
+				$title      = isset( $settings['title'] ) && '' !== trim( (string) $settings['title'] ) ? wp_strip_all_tags( (string) $settings['title'] ) : $name;
+				$gateways[] = $title;
+			}
+		}
+
+		return array(
+			'shop'     => true,
+			'version'  => defined( 'WC_VERSION' ) ? (string) WC_VERSION : '',
+			'gateways' => array_slice( array_values( array_unique( array_filter( $gateways ) ) ), 0, 8 ),
+		);
+	}
+
+	/**
 	 * The editing experience the site uses: a page builder if one is
 	 * active, otherwise Classic Editor when that plugin is on, otherwise
 	 * Gutenberg (the block editor, default since WP 5.0).

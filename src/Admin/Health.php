@@ -220,6 +220,7 @@ final class Health {
 			),
 			'builder'       => $builder,
 			'editor'        => $editor,
+			'commerce'      => \Ravnsight\Detective\Support\StackDetector::commerce(),
 			'stack'         => array(
 				'cache'    => $stack['cache'],
 				'security' => $stack['security'],

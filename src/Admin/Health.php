@@ -129,25 +129,8 @@ final class Health {
 		}
 		usort( $stale, static fn( $a, $b ) => $b['months'] <=> $a['months'] );
 
-		// Page-builder detection: setups with builders fail differently.
-		$builder  = '';
-		$builders = array(
-			'elementor/elementor.php'          => 'Elementor',
-			'js_composer/js_composer.php'      => 'WPBakery',
-			'beaver-builder-lite-version/fl-builder.php' => 'Beaver Builder',
-			'oxygen/functions.php'             => 'Oxygen',
-			'fusion-builder/fusion-builder.php' => 'Avada Builder',
-			'breakdance/plugin.php'            => 'Breakdance',
-		);
-		foreach ( $builders as $basename => $name ) {
-			if ( in_array( $basename, $active, true ) ) {
-				$builder = $name;
-				break;
-			}
-		}
-		if ( '' === $builder && in_array( strtolower( (string) $theme->get_template() ), array( 'divi', 'bricks' ), true ) ) {
-			$builder = ucfirst( strtolower( (string) $theme->get_template() ) );
-		}
+		$stack   = \Ravnsight\Detective\Support\StackDetector::detect();
+		$builder = $stack['builder'];
 
 		$updates = array();
 		foreach ( array_slice( $health['plugin_updates'], 0, 15 ) as $up ) {
@@ -189,6 +172,23 @@ final class Health {
 				'parent'  => $parent ? (string) $parent->get( 'Name' ) : '',
 			),
 			'builder'       => $builder,
+			'stack'         => array(
+				'cache'    => $stack['cache'],
+				'security' => $stack['security'],
+				'seo'      => $stack['seo'],
+				'backup'   => $stack['backup'],
+			),
+			'debug'         => array(
+				'wp_debug'        => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'debug_display'   => defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY,
+				'display_errors'  => (bool) ini_get( 'display_errors' ),
+				'disable_wp_cron' => defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
+			),
+			'exec'          => array(
+				'max_execution' => (int) ini_get( 'max_execution_time' ),
+				'object_cache'  => wp_using_ext_object_cache() ? 'external' : 'default',
+				'https'         => is_ssl(),
+			),
 			'plugins'       => array(
 				'total'   => count( $all ),
 				'active'  => count( $active ),
@@ -218,21 +218,41 @@ final class Health {
 			'HTTPS:           ' . ( is_ssl() ? 'yes' : 'no' ),
 			'Language:        ' . get_locale(),
 			'Timezone:        ' . wp_timezone_string(),
-			'Memory limit:    ' . ini_get( 'memory_limit' ) . ' (WP_MEMORY_LIMIT ' . ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : '-' ) . ')',
-			'Upload limits:   upload_max_filesize ' . ini_get( 'upload_max_filesize' ) . ', post_max_size ' . ini_get( 'post_max_size' ),
+			'Memory limit:    ' . ini_get( 'memory_limit' ) . ' (WP_MEMORY_LIMIT ' . ( defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : '-' ) . ', WP_MAX_MEMORY_LIMIT ' . ( defined( 'WP_MAX_MEMORY_LIMIT' ) ? WP_MAX_MEMORY_LIMIT : '-' ) . ')',
+			'Upload limits:   upload_max_filesize ' . ini_get( 'upload_max_filesize' ) . ', post_max_size ' . ini_get( 'post_max_size' ) . ', max_input_vars ' . ini_get( 'max_input_vars' ),
 			'Max execution:   ' . ini_get( 'max_execution_time' ) . ' s',
-			'WP_DEBUG:        ' . ( defined( 'WP_DEBUG' ) && WP_DEBUG ? 'on' : 'off' ),
 			'Object cache:    ' . ( wp_using_ext_object_cache() ? 'external' : 'default' ),
 			'Permalinks:      ' . ( get_option( 'permalink_structure' ) ? get_option( 'permalink_structure' ) : 'plain' ),
 			'Theme:           ' . $theme->get( 'Name' ) . ' ' . $theme->get( 'Version' ) . ( $parent ? ' (child of ' . $parent->get( 'Name' ) . ' ' . $parent->get( 'Version' ) . ')' : '' ),
 			'',
-			'== Active plugins ==',
+			'== Debug & config ==',
+			'WP_DEBUG:        ' . ( defined( 'WP_DEBUG' ) && WP_DEBUG ? 'on' : 'off' ),
+			'WP_DEBUG_LOG:    ' . ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ? 'on' : 'off' ),
+			'WP_DEBUG_DISPLAY:' . ( defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY ? 'on' : 'off' ),
+			'SCRIPT_DEBUG:    ' . ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? 'on' : 'off' ),
+			'display_errors:  ' . ( ini_get( 'display_errors' ) ? 'on' : 'off' ),
+			'WP_CACHE:        ' . ( defined( 'WP_CACHE' ) && WP_CACHE ? 'on' : 'off' ),
+			'DISABLE_WP_CRON: ' . ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ? 'on (real cron expected)' : 'off (visitor-triggered)' ),
+			'AUTOMATIC UPDATES:' . ( defined( 'AUTOMATIC_UPDATER_DISABLED' ) && AUTOMATIC_UPDATER_DISABLED ? ' disabled' : ' default' ),
 		);
 
-		$active = (array) get_option( 'active_plugins', array() );
+		$stack     = \Ravnsight\Detective\Support\StackDetector::detect();
+		$tool_lines = array();
+		foreach ( array( 'builder' => 'Page builder', 'cache' => 'Cache', 'security' => 'Security', 'seo' => 'SEO', 'backup' => 'Backup' ) as $key => $label ) {
+			$tool_lines[] = str_pad( $label . ':', 17 ) . ( '' !== $stack[ $key ] ? $stack[ $key ] : 'none detected' );
+		}
+		$lines[] = '';
+		$lines[] = '== Detected tooling ==';
+		$lines   = array_merge( $lines, $tool_lines );
+
+		$lines[] = '';
+		$lines[] = '== Active plugins ==';
+		$active  = (array) get_option( 'active_plugins', array() );
 		foreach ( get_plugins() as $basename => $data ) {
 			if ( in_array( $basename, $active, true ) ) {
-				$lines[] = str_pad( substr( (string) $data['Name'], 0, 40 ), 42 ) . ( $data['Version'] ?? '' );
+				$cat  = \Ravnsight\Detective\Support\StackDetector::category_of( (string) $basename );
+				$tag  = '' !== $cat ? ' [' . $cat . ']' : '';
+				$lines[] = str_pad( substr( (string) $data['Name'], 0, 40 ), 42 ) . str_pad( (string) ( $data['Version'] ?? '' ), 12 ) . $tag;
 			}
 		}
 
